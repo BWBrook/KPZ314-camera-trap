@@ -8,3 +8,5 @@ renv::restore() # if prompted
 # Knit the workbook
 quarto::quarto_render("practicum.qmd")
 
+tar_read(alpha)
+tar_read(comm_region)

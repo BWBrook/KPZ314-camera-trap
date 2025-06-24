@@ -3,7 +3,7 @@ import::from(renv, init, install, snapshot, status)
 
 required <- c(
   "targets", "import", "here", "tidyverse", "vegan", 
-  "broom", "patchwork", "ggvegan"
+  "broom", "patchwork", "ggvegan", "plotly"
 )
 
 init(bare = TRUE) |> invisible()

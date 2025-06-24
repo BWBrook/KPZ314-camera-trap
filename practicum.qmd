@@ -9,14 +9,20 @@ execute:
 library(targets)
 tar_config_set(script = "_targets.R")
 
-raw      <- tar_read(raw)
-site     <- tar_read(site)
-taxa     <- tar_read(taxa)
-alpha    <- tar_read(alpha)
-comm     <- tar_read(comm)
-beta_bc  <- tar_read(beta_bc)
-fig_heat <- tar_read(fig_heat)
-fig_nmds <- tar_read(fig_nmds)
+raw            <- tar_read(raw)
+site           <- tar_read(site)
+taxa           <- tar_read(taxa)
+alpha          <- tar_read(alpha)
+comm           <- tar_read(comm)
+beta_bc        <- tar_read(beta_bc)
+fig_heat       <- tar_read(fig_heat)
+fig_nmds       <- tar_read(fig_nmds)
+gamma_all      <- tar_read(gamma_all)
+gamma_region   <- tar_read(gamma_region)
+rare_region    <- tar_read(rare_region)
+rare_raw       <- tar_read(rare_raw)
+beta_permanova <- tar_read(beta_permanova)
+fig_sp_trends  <- tar_read(fig_sp_trends)
 ```
 
 ## 1. Orientation
@@ -71,21 +77,59 @@ ggplot(alpha_long, aes(x = metric, y = value)) +
 
 > **TASK 3.1** Choose one site whose Shannon index is notably high or low. State an ecological hypothesis to explain the pattern (≤ 40 words).
 
+### 3.2  Total (γ) diversity
+
+```{r}
+gamma_all     # prints scalar
+gamma_region  # prints tibble
+```
+> **TASK 3.2** How much of the γ diversity is captured in wet vs dry sites? (≤ 30 words)
+
+### 3.3  Sampling sufficiency
+
+```{r}
+rare_raw
+```
+
+> **TASK 3.3.1** Are some of the camera sites undersampled? (≤ 30 words)
+
+```{r}
+rare_region
+```
+
+> **TASK 3.3.2** Do the wet and dry curves suggest similar sampling completeness across habitats? Explain in ≤ 40 words.
+
 ---
 
 ## 4. Community turnover
 
-**Visualise site compositional turnover and community structure.**
+### 4.1  Visualise site compositional turnover and community structure.
 
 ```{r}
 fig_heat
 ```
 
 ```{r}
-fig_nmds
+plotly::ggplotly(fig_nmds)
 ```
 
 > **TASK 4.1** Name two clusters of sites that appear compositionally similar. Suggest one abiotic driver that could explain the pattern (≤ 40 words).
+
+### 4.2  Are wet vs dry communities distinct?
+
+```{r}
+beta_permanova
+```
+
+> **TASK 4.2** Interpret the pseudo-F and p-value (≤ 40 words).
+
+### 4.3  Species spotlight
+
+```{r}
+fig_sp_trends
+```
+
+> **TASK 4.3** Which habitat records more possum events? Suggest one ecological driver (≤ 40 words).
 
 ---
 

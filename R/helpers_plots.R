@@ -4,20 +4,32 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
   import::from("ggplot2", ggplot, aes, geom_tile, scale_fill_gradient,
                facet_wrap, theme_minimal, labs)
   import::from("reshape2", melt)
+  import::from("dplyr", select, left_join, filter)
 
-  mat   <- as.matrix(dist_obj)
-  mlt   <- melt(mat, varnames = c("site1", "site2"))
-  mlt   <- merge(mlt, meta_df[ , c("camera_site", "region") ],
-                 by.x = "site1", by.y = "camera_site", all.x = TRUE)
+  # distance matrix → long form
+  mlt <- melt(as.matrix(dist_obj),
+              varnames = c("site1", "site2"),
+              value.name = "bray")
 
-  ggplot(mlt, aes(x = site1, y = site2, fill = value)) +
+  # add region for both sites
+  meta_small <- select(meta_df, camera_site, region)
+
+  mlt <- left_join(mlt, meta_small,
+                   by = c("site1" = "camera_site")) |>
+         left_join(meta_small,
+                   by = c("site2" = "camera_site"),
+                   suffix = c("_1", "_2"))
+
+  # keep only within-region comparisons
+  mlt <- filter(mlt, region_1 == region_2)
+
+  ggplot(mlt, aes(x = site1, y = site2, fill = bray)) +
     geom_tile() +
-    facet_wrap(~ region, scales = "free") +
-    scale_fill_gradient(low = "white", high = "red") +
+    facet_wrap(~ region_1, scales = "free") +
+    scale_fill_gradient(low = "white", high = "red",
+                        name = "Bray–Curtis") +
     theme_minimal() +
-    labs(fill = "Bray–Curtis",
-         x = "Site",
-         y = "Site")
+    labs(x = "Site", y = "Site")
 }
 
 # NMDS ordination
