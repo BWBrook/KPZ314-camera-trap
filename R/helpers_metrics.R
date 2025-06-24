@@ -1,4 +1,9 @@
 # R/helpers_metrics.R
+
+import::from("dplyr", group_by, summarise, n_distinct, ungroup, tibble)
+import::from("tidyr", pivot_wider, replace_na)
+import::from("vegan", diversity, estimateR)
+
 #' Alpha‑diversity metrics per site
 #'
 #' @param df Data frame containing at minimum:
@@ -11,10 +16,6 @@
 #'
 #' @export
 calc_alpha <- function(df) {
-  import::from("dplyr", group_by, summarise, n_distinct, ungroup)
-  import::from("tidyr", pivot_wider, replace_na)
-  import::from("vegan", diversity, estimateR)
-
   ## collapse to a site × species abundance table (event counts)
   mat <- df |>
     group_by(camera_site, class_name, event) |>
@@ -34,7 +35,7 @@ calc_alpha <- function(df) {
   pielou   <- shannon / log(pmax(richness, 1))
   chao1    <- unname(apply(mat_num, 1, function(v) estimateR(v)["S.chao1"]))
 
-  dplyr::tibble(
+  tibble(
     camera_site = site_id,
     richness    = richness,
     shannon     = shannon,
@@ -50,9 +51,6 @@ calc_alpha <- function(df) {
 #' @return matrix; row names = camera_site, col names = class_name
 #' @export
 build_comm_matrix <- function(df) {
-  import::from("dplyr", group_by, summarise, ungroup)
-  import::from("tidyr", pivot_wider)
-
   wide <- df |>
     group_by(camera_site, class_name, event) |>
     summarise(n = 1L, .groups = "drop") |>

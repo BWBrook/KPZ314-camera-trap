@@ -2,7 +2,7 @@
 # read_mewc()  ── expert-checked MEWC table -------------------------------
 # Expects a CSV with at least:
 #   camera_site, class_name, event, timestamp, …
-import::from("readr", read_csv)
+import::from("readr", read_csv, col_factor, col_datetime)
 import::from("here", here)
 
 #' Read expert-checked MEWC table
@@ -14,10 +14,10 @@ read_mewc <- function(path = here("data", "mewc_master.csv")) {
     path,
     show_col_types = FALSE,
     col_types = list(
-      camera_site = readr::col_factor(),
-      class_name  = readr::col_factor(),
-      event       = readr::col_integer(),
-      timestamp   = readr::col_datetime("%d/%m/%Y %H:%M:%S")
+      camera_site = col_factor(),
+      class_name  = col_factor(),
+      event       = col_integer(),
+      timestamp   = col_datetime("%d/%m/%Y %H:%M:%S")
     )
   )
 }

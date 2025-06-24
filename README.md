@@ -24,6 +24,14 @@ Rscript bootstrap_env.R      # installs packages, links renv
 quarto render practicum.qmd  # or click “Render” in RStudio
 ````
 
+Or in RStudio, create a Project in the git directory then:
+```r
+source(bootstrap_env.R) # installs all R packages via renv
+quarto::quarto_render("practicum.qmd") # render the md and HTML
+```
+
+> Pipeline cache is pre-built; students do not run tar_make() unless they intentionally want to recompute.
+
 ## Rebuilding the pipeline (optional)
 
 ```r

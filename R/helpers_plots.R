@@ -1,11 +1,13 @@
 # R/helpers_plots.R
+
+import::from("ggplot2", ggplot, aes, geom_tile, scale_fill_gradient, geom_point,
+             geom_text, facet_wrap, theme_minimal, labs)
+import::from("reshape2", melt)
+import::from("dplyr", select, left_join, filter)
+import::from("vegan", metaMDS, scores)
+
 # Heatmap of Bray–Curtis dissimilarity
 plot_turnover_heatmap <- function(dist_obj, meta_df) {
-  import::from("ggplot2", ggplot, aes, geom_tile, scale_fill_gradient,
-               facet_wrap, theme_minimal, labs)
-  import::from("reshape2", melt)
-  import::from("dplyr", select, left_join, filter)
-
   # distance matrix → long form
   mlt <- melt(as.matrix(dist_obj),
               varnames = c("site1", "site2"),
@@ -34,11 +36,6 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
 
 # NMDS ordination
 plot_nmds <- function(dist_obj, meta_df, k = 2) {
-  import::from("vegan", metaMDS, scores)
-  import::from("ggplot2", ggplot, aes, geom_point, geom_text, theme_minimal,
-               labs)
-  import::from("dplyr", left_join)
-
   ord  <- metaMDS(dist_obj, k = k, trymax = 50, autotransform = FALSE)
   sco  <- as.data.frame(scores(ord, display = "sites"))
   sco$camera_site <- rownames(sco)

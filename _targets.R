@@ -1,5 +1,5 @@
 # _targets.R  — executed only by staff *before* the lab -----------------
-import::from(targets, tar_option_set, tar_target)
+import::from("targets", tar_option_set, tar_target)
 import::here(read_mewc, read_taxa, .from = "R/helpers_io.R")
 import::here(calc_alpha, build_comm_matrix, .from = "R/helpers_metrics.R")
 import::here(plot_turnover_heatmap, plot_nmds, .from = "R/helpers_plots.R")

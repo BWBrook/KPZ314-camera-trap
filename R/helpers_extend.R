@@ -8,6 +8,11 @@
 # All follow the explicit‑import rule (import::from), no side effects.
 # -----------------------------------------------------------------------------
 
+import::from("vegan", rarefy, adonis2)
+import::from("ggplot2", ggplot, aes, geom_line, theme_minimal, labs)
+import::from("dplyr", bind_rows, distinct, filter, count)
+import::from("tidyr", pivot_wider)
+
 #' Rarefaction curves (one per camera site, rows = sites)
 #'
 #' @param comm_mat matrix of event counts, rows = sites, cols = species
@@ -15,10 +20,6 @@
 #' @return         ggplot object
 #' @export
 calc_rarefaction <- function(comm_mat, step = 1) {
-  import::from("vegan", rarefy)
-  import::from("ggplot2", ggplot, aes, geom_line, theme_minimal, labs)
-  import::from("dplyr", bind_rows)
-
   ## 1. ensure rows = sites, integer counts
   comm_mat <- as.matrix(comm_mat)
   storage.mode(comm_mat) <- "integer"
@@ -61,9 +62,6 @@ calc_rarefaction <- function(comm_mat, step = 1) {
 #' @return          adonis2 result (data.frame)
 #' @export
 permanova_region <- function(dist_obj, meta_df) {
-  import::from("vegan", adonis2)
-  import::from("dplyr", distinct)
-
   # adonis2 expects one row per site in the metadata
   meta_unique <- distinct(meta_df, camera_site, region)
   adonis2(dist_obj ~ region, data = meta_unique)
@@ -76,9 +74,6 @@ permanova_region <- function(dist_obj, meta_df) {
 #' @return             wide table: camera_site × species, values = event counts
 #' @export
 species_trend <- function(df, species_vec) {
-  import::from("dplyr", filter, count)
-  import::from("tidyr", pivot_wider)
-
   df |>
     filter(class_name %in% species_vec) |>
     count(camera_site, class_name, name = "events") |>
