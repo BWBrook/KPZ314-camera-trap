@@ -1,0 +1,16 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+plot_turnover_heatmap|function|f61f5bd4a8888e4c
+plot_nmds|function|50765b8582e96e9b
+build_comm_matrix|function|c8060a5d742a29f3
+calc_alpha|function|630ac0ec9d3611b0
+read_mewc|function|07e4da6668df3a46
+read_taxa|function|79a34f21621ae3bb
+site|stem|36dd2afe5655ad87|9da6b73835a9b7a1|2c530c1562a7fbd1|-1157844207||t20263.1899519044s|s561b|561|rds|local|vector|||3.72||
+raw|stem|bc7b20dee754e5c3|56a12ac3807144a0|c8f40b83925b29e7|727646308||t20263.1899533293s|s12578b|12578|rds|local|vector|||0.05||
+taxa|stem|13e77641fc61087b|b9a6c0f0eba1930d|7744d895e9dbc3e1|493123585||t20263.1899542443s|s2877b|2877|rds|local|vector|||0.02||
+joined|stem|013a388879e3b640|8f5f06b77a2a6caf|291c3194dac30eeb|1693411528||t20263.1899545034s|s12991b|12991|rds|local|vector|||0||
+alpha|stem|72669ded7bb0faf1|6af111e82ef3df86|875576db500a5f68|-1209573786||t20263.1899553126s|s392b|392|rds|local|vector|||0.04||
+comm|stem|2628440a28e72a2d|85e9f764221889d1|9a261f1900ba7794|-1200050719||t20263.1899558044s|s342b|342|rds|local|vector|||0.01||
+beta_bc|stem|d4bb1f9610701c73|d16c855777fc27f3|e0b94067d92e0828|1582071401||t20263.1899560825s|s339b|339|rds|local|vector|||0||
+fig_nmds|stem|46ab213ebb4872a1|69bb1aecff3b92bb|356975d5424e672a|288837874||t20263.1899578515s|s160492b|160492|rds|local|vector|||0.07|stress is (nearly) zero: you may have insufficient data|
+fig_heat|stem|36e1407f6c3bf006|09c62457356fd28b|56c41d520df14497|-703844438||t20263.1899593803s|s174276b|174276|rds|local|vector|||0.02||

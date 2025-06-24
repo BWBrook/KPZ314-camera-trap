@@ -1,0 +1,108 @@
+---
+title: "KPZ314 Camera-trap Practical"
+format: html
+execute:
+  echo: true
+---
+
+```{r setup, include=FALSE}
+library(targets)
+tar_config_set(script = "_targets.R")
+
+raw      <- tar_read(raw)
+site     <- tar_read(site)
+taxa     <- tar_read(taxa)
+alpha    <- tar_read(alpha)
+comm     <- tar_read(comm)
+beta_bc  <- tar_read(beta_bc)
+fig_heat <- tar_read(fig_heat)
+fig_nmds <- tar_read(fig_nmds)
+```
+
+## 1. Orientation
+
+**Look at the raw, expert‑checked data table.**
+
+```{r}
+dplyr::glimpse(raw)
+```
+
+> **TASK 1.1** In ≤ 30 words, explain what `expert_updated` encodes in this dataset.
+
+---
+
+## 2. Why “independent events”?
+
+**Explore time gaps between events at each site.**
+
+```{r}
+library(ggplot2)
+
+raw |>
+  dplyr::group_by(camera_site) |>
+  dplyr::arrange(timestamp, .by_group = TRUE) |>
+  dplyr::mutate(
+    delta = as.numeric(difftime(timestamp, dplyr::lag(timestamp), units = "mins"))
+  ) |>
+  ggplot(aes(x = delta)) +
+  geom_histogram(bins = 60, na.rm = TRUE) +
+  labs(
+    x = "Minutes between consecutive detections",
+    y = "Frequency"
+  )
+```
+
+> **TASK 2.1** Why is a 5‑minute threshold for “independent events” a sensible or not sensible choice for this fauna? (≤ 40 words)
+
+---
+
+## 3. Site‑level diversity
+
+**Inspect alpha‑diversity metrics for all sites.**
+
+```{r}
+alpha_long <- tidyr::pivot_longer(alpha, -camera_site,
+                                  names_to = "metric",
+                                  values_to = "value")
+
+ggplot(alpha_long, aes(x = metric, y = value)) +
+  geom_boxplot()
+```
+
+> **TASK 3.1** Choose one site whose Shannon index is notably high or low. State an ecological hypothesis to explain the pattern (≤ 40 words).
+
+---
+
+## 4. Community turnover
+
+**Visualise site compositional turnover and community structure.**
+
+```{r}
+fig_heat
+```
+
+```{r}
+fig_nmds
+```
+
+> **TASK 4.1** Name two clusters of sites that appear compositionally similar. Suggest one abiotic driver that could explain the pattern (≤ 40 words).
+
+---
+
+## 5. Trait exploration (stretch goal)
+
+**Link alpha metrics to species traits (from the taxa table).**
+
+```{r}
+# Example join; adapt if your key differs
+alpha_taxa <- alpha |>
+  dplyr::left_join(site, by = "camera_site")
+```
+
+> **TASK 5.1** If larger‑bodied taxa are more detectable, what pattern would you expect in the alpha metrics? Test it with a quick plot or summary, and comment (≤ 50 words).
+
+---
+
+## 6. Reflection
+
+> **TASK 6.1** In ≤ 50 words, reflect on one limitation or source of bias in using camera‑trap data for community‑level inference in Tasmanian fauna.

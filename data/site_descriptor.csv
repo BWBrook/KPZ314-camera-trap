@@ -1,0 +1,7 @@
+camera_site,lat,lon,region,location,cover,vegtype,elevation_m
+cam_1,-42.1,146.9,dry,arena,dirt,DOB,196
+cam_2,-42.11,146.91,wet,game,rock,DTO,137
+cam_3,-42.12,146.92,dry,game,rock,DTO,133
+cam_4,-42.13,146.93,dry,path,dirt,FPS,228
+cam_5,-42.14,146.94,wet,arena,grass,DOB,211
+cam_6,-42.15,146.96,wet,game,grass,DOB,202
