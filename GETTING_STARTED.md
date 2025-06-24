@@ -24,6 +24,7 @@
 5. **Render the workbook**
    Click the **Render** button in the `practicum.qmd` tab.
    The HTML will open automatically; answer the TASK prompts inline.
+   Alternatively, in the R console, type: `quarto::quarto_render("practicum.qmd")`
 
 **Troubleshooting**
 

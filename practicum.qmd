@@ -139,8 +139,7 @@ fig_sp_trends
 
 ```{r}
 # Example join; adapt if your key differs
-alpha_taxa <- alpha |>
-  dplyr::left_join(site, by = "camera_site")
+alpha |> dplyr::left_join(site, by = "camera_site")
 ```
 
 > **TASK 5.1** If larger‑bodied taxa are more detectable, what pattern would you expect in the alpha metrics? Test it with a quick plot or summary, and comment (≤ 50 words).
@@ -150,3 +149,92 @@ alpha_taxa <- alpha |>
 ## 6. Reflection
 
 > **TASK 6.1** In ≤ 50 words, reflect on one limitation or source of bias in using camera‑trap data for community‑level inference in Tasmanian fauna.
+
+---
+
+## 7. Free Exploration
+
+You can load any pipeline object into your R environment and explore it.
+
+**For example:**
+
+```{r}
+# Assign the 'alpha' site diversity table to your workspace
+alpha_local <- tar_read(alpha)
+
+# view the whole table in RStudio
+alpha_local
+```
+
+**Try these ideas:**
+
+* **Compare any two objects**
+  e.g. plot Chao1 vs. Shannon diversity for all sites
+
+  ```{r}
+  alpha_tbl <- tar_read(alpha)
+  plot(alpha_tbl$chao1, alpha_tbl$shannon,
+       xlab = "Chao1", ylab = "Shannon", pch = 16)
+  ```
+
+* **Investigate site metadata**
+
+  ```{r}
+  site_tbl <- tar_read(site)
+  summary(site_tbl$elevation_m)
+  ```
+
+* **Make a custom plot**
+
+  ```{r}
+  library(ggplot2)
+  taxa_tbl <- tar_read(taxa)
+  ggplot(taxa_tbl, aes(x = status, fill = status)) +
+    geom_bar(show.legend = FALSE) +
+    labs(title = "Taxon status in Tasmanian fauna",
+        x = "Status", y = "Frequency") +
+    theme_minimal()
+  ```
+
+> **TASK 7.1** Are native or introduced taxa more common in this camera-trap dataset? What does this suggest about Tasmania’s fauna?
+
+* **Re-run a helper function yourself**
+
+  Try feeding a subset of data to `calc_alpha()` or `build_comm_matrix()`.
+
+  ```{r}
+  # For interactive use of helpers:
+  library(dplyr)
+  library(tidyr)
+  source("R/helpers_metrics.R")
+
+  joined <- tar_read(joined)
+  custom <- joined[joined$region == "dry", ]
+  calc_alpha(custom)
+  ```
+
+**Or try anything else**: every object from the workflow is just a data frame or matrix you can inspect, plot, or save!
+
+---
+
+> **Bonus:** In the R console, run `tar_manifest()` to see all available pipeline objects, or use `ls()` to see what’s loaded into your workspace.
+
+---
+
+## 8. Your Own Analysis
+
+Write a short script or chunk below where you try something new with the data—anything goes!
+
+```{r}
+
+# Your code here!
+
+```
+
+---
+
+## 9. “In-console” play
+
+After knitting, you can open the R console, load the project, and call `tar_read()` for any target, or `source("R/helpers_metrics.R")` to get all helpers.
+
+For truly unchained analysis: create an `explore.R` or `scratch.Rmd` and go free-form!
