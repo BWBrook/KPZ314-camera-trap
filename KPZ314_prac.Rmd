@@ -1,4 +1,0 @@
-### 2.2  Define independent events
-```{r}
-# TODO: complete the body of collapse_events()
-# Parameters: df, min_gap (mins)
