@@ -1,6 +1,6 @@
 # Getting Started: KPZ314 Camera-trap Practical
 
-*5-minute checklist for Week-8 lab.*
+*5-minute checklist for Week-8 Prac.*
 
 1. **Install Git (once)**  
    * Windows: <https://git-scm.com/download/win>  
