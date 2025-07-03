@@ -2,8 +2,8 @@
 # read_mewc()  ── expert-checked MEWC table -------------------------------
 # Expects a CSV with at least:
 #   camera_site, class_name, event, timestamp, …
-import::from("readr", read_csv, col_factor, col_datetime)
-import::from("here", here)
+import::here(read_csv, col_factor, col_datetime, .from = "readr")
+import::here(here, .from = "here")
 
 #' Read expert-checked MEWC table
 #' @param path Relative path to csv (default = data/mewc_master.csv)

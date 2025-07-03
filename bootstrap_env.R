@@ -2,8 +2,8 @@ if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
 import::from("renv", init, install, snapshot, status)
 
 required <- c(
-  "targets", "import", "here", "tidyverse", "vegan", 
-  "broom", "patchwork", "ggvegan", "plotly"
+  "targets", "import", "dplyr", "readr", "here", "tidyr", "vegan", "ggplot2", 
+  "tibble", "reshape2", "knitr", "kableExtra"
 )
 
 init(bare = TRUE) |> invisible()

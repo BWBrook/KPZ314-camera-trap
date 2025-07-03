@@ -8,10 +8,10 @@
 # All follow the explicit‑import rule (import::from), no side effects.
 # -----------------------------------------------------------------------------
 
-import::from("vegan", rarefy, adonis2)
-import::from("ggplot2", ggplot, aes, geom_line, theme_minimal, labs)
-import::from("dplyr", bind_rows, distinct, filter, count)
-import::from("tidyr", pivot_wider)
+import::here(rarefy, adonis2, .from = "vegan")
+import::here(ggplot, aes, geom_line, theme_minimal, labs, .from = "ggplot2")
+import::here(bind_rows, distinct, filter, count, .from = "dplyr")
+import::here(pivot_wider, .from = "tidyr")
 
 #' Rarefaction curves (one per camera site, rows = sites)
 #'

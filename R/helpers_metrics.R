@@ -1,8 +1,8 @@
 # R/helpers_metrics.R
 
-import::from("dplyr", group_by, summarise, n_distinct, ungroup, tibble)
-import::from("tidyr", pivot_wider, replace_na)
-import::from("vegan", diversity, estimateR)
+import::here(group_by, summarise, n_distinct, ungroup, tibble, .from = "dplyr")
+import::here(pivot_wider, replace_na, .from = "tidyr")
+import::here(diversity, estimateR, .from = "vegan")
 
 #' Alpha‑diversity metrics per site
 #'

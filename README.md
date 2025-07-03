@@ -11,7 +11,7 @@ Students use an expert-validated MEWC camera-trap table to derive site- and comm
 R/                    # helper functions, one task each
 practicum.qmd         # the workbook you knit
 data/                 # master table + site + taxa
-_targets/             # <-- small (~1 MB) cache of pre-made targets
+_targets/             # small (~1 MB) cache of pre-made targets
 
 ````
 

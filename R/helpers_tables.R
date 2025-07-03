@@ -1,6 +1,6 @@
 # R/helpers_tables.R
-import::from("knitr", kable)
-import::from("kableExtra", kable_styling)
+import::here(kable, .from = "knitr")
+import::here(kable_styling, .from = "kableExtra")
 
 # Simple kable wrapper with consistent styling
 make_kable <- function(df, caption = NULL) {

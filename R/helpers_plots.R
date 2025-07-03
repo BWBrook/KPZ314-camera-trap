@@ -1,10 +1,10 @@
 # R/helpers_plots.R
 
-import::from("ggplot2", ggplot, aes, geom_tile, scale_fill_gradient, geom_point,
-             geom_text, facet_wrap, theme_minimal, labs)
-import::from("reshape2", melt)
-import::from("dplyr", select, left_join, filter)
-import::from("vegan", metaMDS, scores)
+import::here(ggplot, aes, geom_tile, scale_fill_gradient, geom_point,
+             geom_text, facet_wrap, theme_minimal, labs, .from = "ggplot2")
+import::here(melt, .from = "reshape2")
+import::here(select, left_join, filter, .from = "dplyr")
+import::here(metaMDS, scores, .from = "vegan")
 
 # Heatmap of Bray–Curtis dissimilarity
 plot_turnover_heatmap <- function(dist_obj, meta_df) {
