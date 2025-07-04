@@ -9,7 +9,7 @@
 2. **Clone the repo**
 
    ```bash
-   git clone https://github.com/UTasEco/KPZ314-camera-trap.git
+   git clone https://github.com/BWBrook/KPZ314-camera-trap.git
    ````
 
 3. **Open the project in RStudio**

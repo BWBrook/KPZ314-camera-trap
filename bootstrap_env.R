@@ -1,4 +1,4 @@
-if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv", "import")
 import::from("renv", init, install, snapshot, status)
 
 required <- c(
