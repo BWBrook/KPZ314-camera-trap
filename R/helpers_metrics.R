@@ -1,6 +1,6 @@
 # R/helpers_metrics.R
 
-import::here(group_by, summarise, n_distinct, ungroup, tibble, .from = "dplyr")
+import::here(group_by, summarise, n, n_distinct, ungroup, tibble, .from = "dplyr")
 import::here(pivot_wider, replace_na, .from = "tidyr")
 import::here(diversity, estimateR, .from = "vegan")
 

@@ -1,6 +1,6 @@
 # _targets.R  — executed only by staff *before* the lab -----------------
 import::from("targets", tar_option_set, tar_target)
-import::from("dplyr", left_join, group_by, summarise, n_distinct)
+import::from("dplyr", left_join, group_by, summarise, n, n_distinct)
 import::from("readr", read_csv)
 import::from("here", here)
 import::from("tibble", column_to_rownames)

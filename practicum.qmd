@@ -9,6 +9,12 @@ execute:
 library(targets)
 tar_config_set(script = "_targets.R")
 
+# auto‑build if the cache is empty
+if (!tar_exist_objects(names = "raw")) {
+  message("Building targets (~3‑5 min on fresh clone)…")
+  tar_make()
+}
+
 raw            <- tar_read(raw)
 site           <- tar_read(site)
 taxa           <- tar_read(taxa)

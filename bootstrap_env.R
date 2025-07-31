@@ -10,3 +10,5 @@ init(bare = TRUE) |> invisible()
 missing <- setdiff(required, status()$library$Package)
 if (length(missing)) install(missing)
 snapshot()
+
+quarto::check_newer_version()

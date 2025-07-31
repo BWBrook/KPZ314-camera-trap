@@ -1,27 +1,27 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-site|stem|36dd2afe5655ad87|9da6b73835a9b7a1|2c530c1562a7fbd1|-1157844207||t20263.1899519044s|s561b|561|rds|local|vector|||3.72||
-raw|stem|bc7b20dee754e5c3|56a12ac3807144a0|c8f40b83925b29e7|727646308||t20263.1899533293s|s12578b|12578|rds|local|vector|||0.05||
-taxa|stem|13e77641fc61087b|b9a6c0f0eba1930d|7744d895e9dbc3e1|493123585||t20263.1899542443s|s2877b|2877|rds|local|vector|||0.02||
-joined|stem|013a388879e3b640|8f5f06b77a2a6caf|291c3194dac30eeb|1693411528||t20263.1899545034s|s12991b|12991|rds|local|vector|||0||
-alpha|stem|72669ded7bb0faf1|6af111e82ef3df86|875576db500a5f68|-1209573786||t20263.1899553126s|s392b|392|rds|local|vector|||0.04||
-comm|stem|2628440a28e72a2d|85e9f764221889d1|9a261f1900ba7794|-1200050719||t20263.1899558044s|s342b|342|rds|local|vector|||0.01||
-beta_bc|stem|d4bb1f9610701c73|d16c855777fc27f3|e0b94067d92e0828|1582071401||t20263.1899560825s|s339b|339|rds|local|vector|||0||
-fig_nmds|stem|46ab213ebb4872a1|69bb1aecff3b92bb|356975d5424e672a|288837874||t20263.1899578515s|s160492b|160492|rds|local|vector|||0.07|stress is (nearly) zero: you may have insufficient data|
-gamma_all|stem|0c6855174858817c|6a98d4fb19809196|4c400041cbe7b7af|-1962799389||t20263.228972657s|s47b|47|rds|local|vector|||0||
-sp_table|stem|370b15760fe7ee52|880b48735f89e629|7423e48c93fc62eb|-673164503||t20263.2328346246s|s217b|217|rds|local|vector|||0.04||
-gamma_region|stem|e72db55ae87b08ae|86ed5669598b0d9d|5576fc24e3a4e072|1929514769||t20263.2328354156s|s156b|156|rds|local|vector|||0.01||
-fig_sp_trends|stem|4df79feecb94cf70|509d718d709db441|089a13ce818b09e1|-363450185||t20263.2397087706s|s94114b|94114|rds|local|vector|||0.02||
-beta_permanova|stem|037bd0a85f928834|dbec7fd2fb3a012c|8680f7d56b8400bf|-554681715||t20263.2408575426s|s6105b|6105|rds|local|vector|||0.05||
-rare_raw|stem|7a02dd908569455e|1842a053454e7e2f|8d553278ee6e733a|78405330||t20263.3154682724s|s97801b|97801|rds|local|vector|||0.06|most observed count data have counts 1, but smallest count is 6. most observed count data have counts 1, but smallest count is 2|
-comm_region|stem|6d86fa79e0ea267e|9e404f136ffc7a67|5576fc24e3a4e072|799550805||t20263.3216439148s|s294b|294|rds|local|vector|||0.02||
-rare_region|stem|96dbd0ae95a52913|893b8c7daa04d82f|31c4dea5d72acc26|1764130030||t20263.3216455079s|s96101b|96101|rds|local|vector|||0.04||
-fig_heat|stem|d971a950113210cf|09c62457356fd28b|5a7e2b99728c7826|-703844438||t20263.3295154854s|s173974b|173974|rds|local|vector|||0.05||
-plot_turnover_heatmap|function|2c6245438ef8e398
-plot_nmds|function|50765b8582e96e9b
-build_comm_matrix|function|c8060a5d742a29f3
-permanova_region|function|db2c83074764fe78
-calc_alpha|function|630ac0ec9d3611b0
-read_mewc|function|07e4da6668df3a46
-calc_rarefaction|function|35afa59110527851
+site|stem|0299f17ca89c3170|591318674bf533d2|2c530c1562a7fbd1|-1157844207||t20300.1248986276s|s563b|563|rds|local|vector|||0.56||
+raw|stem|0ea5d407989b2a57|56a12ac3807144a0|6432bb73b5eb7f19|727646308||t20300.1249001481s|s12579b|12579|rds|local|vector|||0.04||
+taxa|stem|99aea6e0507c6020|b9a6c0f0eba1930d|7744d895e9dbc3e1|493123585||t20300.1249014592s|s2878b|2878|rds|local|vector|||0.03||
+joined|stem|258f841a21405bcf|782d5284ef4c9681|c6d7ecae33d5b707|1693411528||t20300.1249022352s|s12993b|12993|rds|local|vector|||0||
+gamma_all|stem|99714117c49edf56|804f6e2ee6bf5c40|775b1f90e6f93743|-1962799389||t20300.1249029226s|s48b|48|rds|local|vector|||0||
+sp_table|stem|47d7c770a4c728f0|880b48735f89e629|d12c39231106403a|-673164503||t20300.1249038983s|s216b|216|rds|local|vector|||0.03||
+gamma_region|stem|9fc92b3fa1a821d2|d8c7cb5fd44d2fc3|393fa528b023cf7e|1929514769||t20300.1249045904s|s157b|157|rds|local|vector|||0||
+alpha|stem|b257043dba30663a|6af111e82ef3df86|ef42ffaa3d76f8b2|-1209573786||t20300.1262742401s|s394b|394|rds|local|vector|||0.03||
+comm|stem|b3bc0d38529f517c|85e9f764221889d1|52d4bfccadea0f1b|-1200050719||t20300.1262748637s|s342b|342|rds|local|vector|||0.02||
+plot_turnover_heatmap|function|356e5992bfec3336
+plot_nmds|function|9e72594cf6420657
+build_comm_matrix|function|b8072c4ba61bb4ef
+permanova_region|function|b93ac148b61b3685
+calc_alpha|function|072ccdde211b7ba8
+read_mewc|function|ed56f2a0ccb7c3af
+calc_rarefaction|function|2997a745bfb37181
 read_taxa|function|79a34f21621ae3bb
-species_trend|function|2170ba283800d59a
+species_trend|function|0c6f6020247ce0ec
+comm_region|stem|01bd80c115168172|37ba21d3af181bd6|393fa528b023cf7e|799550805||t20300.1270866711s|s295b|295|rds|local|vector|||0.03||
+fig_sp_trends|stem|915fba36ecd20991|ef1699ac235b99ae|3ea0727870a058c0|-363450185||t20300.1270878442s|s95682b|95682|rds|local|vector|||0.02||
+beta_bc|stem|2be67b082f3694c0|fc47e254b37b66c1|45d23ba623069fe4|1582071401||t20300.1270885405s|s327b|327|rds|local|vector|||0||
+rare_raw|stem|ef28c47b6a83a7a5|1842a053454e7e2f|9c6260bf12e2de67|78405330||t20300.1270895267s|s108528b|108528|rds|local|vector|||0.02|most observed count data have counts 1, but smallest count is 6. most observed count data have counts 1, but smallest count is 2|
+rare_region|stem|d655a80180cfc75a|893b8c7daa04d82f|46cd50219c888596|1764130030||t20300.1270906174s|s109180b|109180|rds|local|vector|||0.03||
+fig_nmds|stem|ddb8c66d87e65252|69bb1aecff3b92bb|2a3a69d63bfdb807|288837874||t20300.1270925145s|s169971b|169971|rds|local|vector|||0.1|stress is (nearly) zero: you may have insufficient data|
+fig_heat|stem|e6cdb64d0629e9c4|09c62457356fd28b|48f354af701f0bec|-703844438||t20300.1270940019s|s183734b|183734|rds|local|vector|||0.03||
+beta_permanova|stem|fe72ac4a5badf4f5|dbec7fd2fb3a012c|6db8ac30bcf9c31f|-554681715||t20300.1270945287s|s6106b|6106|rds|local|vector|||0.02||
