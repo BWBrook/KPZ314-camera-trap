@@ -10,7 +10,7 @@ import::here(here, .from = "here")
 #' @param path Relative path to csv (default = data/mewc_master.csv)
 #' @return tibble
 #' @export
-read_mewc <- function(path = here("data", "mewc_master.csv")) {
+read_mewc <- function(path = here("data", "kpz314_2025_cam_dataset.csv")) {
   read_csv(
     path,
     show_col_types = FALSE,
@@ -27,6 +27,6 @@ read_mewc <- function(path = here("data", "mewc_master.csv")) {
 # Expects at least: class_name, body_mass, trophic_group, …
 #' @param path Relative path to csv (default = data/taxa.csv)
 #' @export
-read_taxa <- function(path = here("data", "taxa.csv")) {
+read_taxa <- function(path = here("data", "kzp314_2025_species_list.csv")) {
   read_csv(path, show_col_types = FALSE)
 }

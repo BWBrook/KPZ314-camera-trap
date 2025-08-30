@@ -42,6 +42,7 @@ vignettes/*.pdf
 
 # pkgdown site
 docs/
+a*.md
 
 # translation temp files
 po/*~
@@ -68,3 +69,4 @@ _targets/**             # but ignore any new/changed files
 .DS_Store
 .vscode/
 .idea/
+data/

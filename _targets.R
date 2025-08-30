@@ -17,7 +17,7 @@ import::here(calc_rarefaction, permanova_region, species_trend,
 list(
   tar_target(raw,      read_mewc()),
   tar_target(taxa,     read_taxa()),
-  tar_target(site,     read_csv(here("data", "site_descriptor.csv"),
+  tar_target(site,     read_csv(here("data", "kzp314_2025_site_data.csv"),
                                 show_col_types = FALSE)),
   tar_target(joined,   left_join(raw, site, by = "camera_site")),
   tar_target(alpha,    calc_alpha(joined)),
