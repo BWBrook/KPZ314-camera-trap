@@ -32,6 +32,13 @@ The pipeline parameterises “independent events” via a time gap and derives s
 - Effort is summarised from site metadata (`op_days` → `trap_nights`), and RAIs are computed as `100 * events / trap_nights`.
 - A gap‑sensitivity diagnostic (`fig_gap`) explores how metrics vary for gaps {1, 5, 10, 30} minutes.
 
+### Diversity with uncertainty
+
+We report alpha diversity using Hill numbers (q = 0, 1, 2) with bootstrap CIs:
+- q0 = richness; q1 = exp(Shannon); q2 = inverse Simpson. See `alpha` (point estimates) and `alpha_ci` (CIs).
+- Habitat-level gamma with site-bootstrap CIs is available via `gamma_by_habitat`; overall gamma via `gamma_all_ci`.
+- Rarefaction plots annotate sampling coverage (S_obs/Chao1) at the observed endpoint, and include a wet vs dry overlay.
+
 ## Rebuilding the pipeline (optional)
 
 ```r

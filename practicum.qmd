@@ -32,6 +32,9 @@ beta_permanova <- targets::tar_read(beta_permanova)
 fig_sp_trends  <- targets::tar_read(fig_sp_trends)
 rai            <- targets::tar_read(rai)
 tab_effort     <- targets::tar_read(tab_effort)
+alpha_ci       <- targets::tar_read(alpha_ci)
+gamma_by_habitat <- targets::tar_read(gamma_by_habitat)
+gamma_all_ci     <- targets::tar_read(gamma_all_ci)
 ```
 
 ## 1. Orientation
@@ -108,6 +111,13 @@ ggplot2::ggplot(alpha_long_entropy, ggplot2::aes(x = metric, y = value)) +
   ggplot2::geom_boxplot()
 ```
 
+Hill numbers provide a unified view of diversity: q=0 is richness, q=1 is the effective number of species from Shannon (exp[H]), and q=2 is the inverse Simpson (dominance‑sensitive).
+
+```{r}
+# Bootstrap 95% CIs for Hill numbers and Pielou (per site)
+knitr::kable(head(alpha_ci, 12), caption = "Alpha diversity (Hill) with 95% CIs (first 12 rows)")
+```
+
 > **TASK 3.1** Choose one site whose Shannon index is notably high or low. State an ecological hypothesis to explain the pattern (≤ 40 words).
 
 ### 3.2  Total (γ) diversity
@@ -117,8 +127,11 @@ ggplot2::ggplot(alpha_long_entropy, ggplot2::aes(x = metric, y = value)) +
 gamma_all_adj    <- gamma_all - 1L
 gamma_region_adj <- dplyr::mutate(gamma_region, gamma = gamma - 1L)
 
-gamma_all_adj     # prints scalar (adjusted)
-gamma_region_adj  # prints tibble (adjusted)
+gamma_all_adj     # scalar (adjusted)
+gamma_region_adj  # by type (adjusted)
+
+# Habitat-level gamma (Hill numbers) with 95% CIs
+knitr::kable(gamma_by_habitat, caption = "Habitat-level gamma diversity (Hill) with bootstrap CIs")
 ```
 > **TASK 3.2** How much of the γ diversity is captured in wet vs dry sites? (≤ 30 words)
 
@@ -133,6 +146,8 @@ rare_raw
 ```{r}
 rare_region
 ```
+
+Sampling sufficiency and coverage: the endpoints on each rarefaction curve show the observed richness and its estimated coverage (S_obs/Chao1). Closer to 1 implies better sampling completeness.
 
 > **TASK 3.3.2** Do the wet and dry curves suggest similar sampling completeness across habitats? Explain in ≤ 40 words.
 
