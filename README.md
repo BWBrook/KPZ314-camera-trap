@@ -24,6 +24,14 @@ quarto::quarto_render("practicum.qmd") # render the md and HTML
 
 > Pipeline cache is pre-built; students do not run tar_make() unless they intentionally want to recompute.
 
+### Independent events, effort, and RAI
+
+The pipeline parameterises “independent events” via a time gap and derives sampling effort and RAIs (events per 100 trap‑nights):
+
+- Change the default gap in `_targets.R` by editing `events_default = build_events(raw, gap_min = 5L)`.
+- Effort is summarised from site metadata (`op_days` → `trap_nights`), and RAIs are computed as `100 * events / trap_nights`.
+- A gap‑sensitivity diagnostic (`fig_gap`) explores how metrics vary for gaps {1, 5, 10, 30} minutes.
+
 ## Rebuilding the pipeline (optional)
 
 ```r

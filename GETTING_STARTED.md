@@ -23,3 +23,21 @@
 | `tar_read()` error          | In Console: `targets::tar_make()`                |
 | YAMLException line 5        | Ensure the header starts with three dashes `---` |
 | “package XYZ not available” | `renv::restore()` then restart R                 |
+
+### Independent events: where to change the gap
+
+- The default event gap is 5 minutes. To change it and rebuild affected outputs:
+
+```r
+# In _targets.R, edit this line
+events_default <- build_events(raw, gap_min = 5L)
+
+# Then rebuild the affected targets
+targets::tar_make(names = c("events_default","rai","alpha","comm","gap_sensitivity","fig_gap"))
+```
+
+RAIs (rate of animal images) are per 100 trap‑nights and are available via:
+
+```r
+targets::tar_read(rai)
+```

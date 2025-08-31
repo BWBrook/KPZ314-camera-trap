@@ -1,6 +1,6 @@
 # _targets.R  — executed only by staff *before* the lab -----------------
 import::from("targets",   tar_option_set, tar_target, tar_source)
-import::from("dplyr",     left_join, group_by, summarise, n, n_distinct)
+import::from("dplyr",     left_join, group_by, summarise, n, n_distinct, arrange)
 import::from("readr",     read_csv)
 import::from("here",      here)
 import::from("tibble",    column_to_rownames)
@@ -16,9 +16,21 @@ list(
                                 show_col_types = FALSE)),
   tar_target(raw,      read_mewc()),
   tar_target(taxa,     read_taxa()),
-  tar_target(joined,   left_join(raw, site, by = "site")),
+  # events + effort + RAI
+  tar_target(events_default, build_events(raw, gap_min = 5L)),
+  tar_target(effort_site,    summarise_effort(site)),
+  tar_target(rai,            compute_rai(events_default, effort_site)),
+  tar_target(gap_values,     c(1L, 5L, 10L, 30L)),
+  tar_target(events_gap,     build_events(raw, gap_min = gap_values),
+             pattern = map(gap_values), iteration = "list"),
+  tar_target(gap_sensitivity, summarise_gap_sensitivity(events_gap, effort_site)),
+  tar_target(fig_gap,         gap_sensitivity$fig),
+  tar_target(tab_effort,      make_kable(effort_site, caption = "Site effort manifest")),
+
+  # join with site metadata for downstream analyses
+  tar_target(joined,   left_join(events_default, site, by = "site")),
   tar_target(alpha,    calc_alpha(joined)),
-  tar_target(gamma_all, n_distinct(raw$common)),
+  tar_target(gamma_all, n_distinct(events_default$common)),
   tar_target(gamma_region, joined |> group_by(type) |>
                 summarise(gamma = n_distinct(common))),
   tar_target(comm,     build_comm_matrix(joined)),

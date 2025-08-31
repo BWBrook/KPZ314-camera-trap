@@ -23,12 +23,15 @@ beta_bc        <- targets::tar_read(beta_bc)
 fig_heat       <- targets::tar_read(fig_heat)
 fig_nmds       <- targets::tar_read(fig_nmds)
 fig_site_map   <- targets::tar_read(fig_site_map)
+fig_gap        <- targets::tar_read(fig_gap)
 gamma_all      <- targets::tar_read(gamma_all)
 gamma_region   <- targets::tar_read(gamma_region)
 rare_region    <- targets::tar_read(rare_region)
 rare_raw       <- targets::tar_read(rare_raw)
 beta_permanova <- targets::tar_read(beta_permanova)
 fig_sp_trends  <- targets::tar_read(fig_sp_trends)
+rai            <- targets::tar_read(rai)
+tab_effort     <- targets::tar_read(tab_effort)
 ```
 
 ## 1. Orientation
@@ -51,29 +54,25 @@ fig_site_map
 
 ---
 
-## 2. Why “independent events”?
+## 2. Independent events and effort
 
-**Explore time gaps between events at each site.**
+We treat “independent events” as detections separated by at least a configurable gap. Below, explore how site‑level metrics change across gap values (1, 5, 10, 30 minutes).
 
 ```{r}
-raw |>
-  dplyr::group_by(site) |>
-  dplyr::arrange(datetime, .by_group = TRUE) |>
-  dplyr::mutate(
-    delta = as.numeric(difftime(datetime, dplyr::lag(datetime), units = "mins"))
-  ) |>
-  dplyr::filter(!is.na(delta) & delta > 0) |>
-  ggplot2::ggplot(ggplot2::aes(x = delta)) +
-  ggplot2::geom_histogram(bins = 60, na.rm = TRUE) +
-  ggplot2::labs(
-    x = "Minutes between consecutive detections",
-    y = "Frequency"
-  ) +
-  ggplot2::scale_x_log10() +
-  ggplot2::scale_y_log10()
+fig_gap
 ```
 
-> **TASK 2.1** Why is a 5‑minute threshold for “independent events” a sensible or not sensible choice for this fauna? (≤ 40 words)
+Sampling effort affects interpretation, so we compute RAIs per 100 trap‑nights and provide the effort manifest for transparency.
+
+```{r}
+tab_effort
+```
+
+```{r}
+head(rai, 8)
+```
+
+> **TASK 2.1** Pick a gap that balances independence and sample size for this fauna. Justify briefly (≤ 40 words).
 
 ---
 

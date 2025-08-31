@@ -3,7 +3,8 @@ import::from("renv", init, install, snapshot, status)
 
 required <- c(
   "targets", "import", "dplyr", "readr", "here", "tidyr", "vegan", "ggplot2", 
-  "tibble", "reshape2", "quarto", "knitr", "kableExtra", "plotly", "ggspatial"
+  "tibble", "reshape2", "quarto", "knitr", "kableExtra", "plotly", "ggspatial",
+  "testthat"
 )
 
 init(bare = TRUE) |> invisible()
