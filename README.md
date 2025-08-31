@@ -27,9 +27,8 @@ quarto::quarto_render("practicum.qmd") # render the md and HTML
 ## Rebuilding the pipeline (optional)
 
 ```r
-library(targets)
-tar_destroy(destroy = "objects")   # wipe old objects
-tar_make()                         # 7–10 s on a laptop
+targets::tar_destroy(destroy = "objects")   # wipe old objects
+targets::tar_make()                         # 7–10 s on a laptop
 ```
 
 ## FAQ

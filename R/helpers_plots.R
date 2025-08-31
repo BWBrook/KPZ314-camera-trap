@@ -14,7 +14,7 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
               value.name = "bray")
 
   # add region for both sites
-  meta_small <- select(meta_df, site, region)
+  meta_small <- select(meta_df, site, type)
 
   mlt <- left_join(mlt, meta_small,
                    by = c("site1" = "site")) |>
@@ -23,11 +23,11 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
                    suffix = c("_1", "_2"))
 
   # keep only within-region comparisons
-  mlt <- filter(mlt, region_1 == region_2)
+  mlt <- filter(mlt, type_1 == type_2)
 
   ggplot(mlt, aes(x = site1, y = site2, fill = bray)) +
     geom_tile() +
-    facet_wrap(~ region_1, scales = "free") +
+    facet_wrap(~ type_1, scales = "free", ncol = 1) +
     scale_fill_gradient(low = "white", high = "red",
                         name = "Bray–Curtis") +
     theme_minimal() +
@@ -42,10 +42,10 @@ plot_nmds <- function(dist_obj, meta_df, k = 2) {
 
   dat  <- left_join(sco, meta_df, by = "site")
 
-  ggplot(dat, aes(x = NMDS1, y = NMDS2, colour = region)) +
+  ggplot(dat, aes(x = NMDS1, y = NMDS2, colour = type)) +
     geom_point(size = 3, alpha = 0.8) +
     geom_text(aes(label = site), vjust = -0.4, size = 3) +
     theme_minimal() +
     labs(title = "NMDS ordination (Bray–Curtis)",
-         colour = "Region")
+         colour = "Type")
 }

@@ -6,29 +6,28 @@ execute:
 ---
 
 ```{r setup, include=FALSE}
-library(targets)
-tar_config_set(script = "_targets.R")
+targets::tar_config_set(script = "_targets.R")
 
 # auto‑build if the cache is empty
-if (!tar_exist_objects(names = "raw")) {
+if (!targets::tar_exist_objects(names = "raw")) {
   message("Building targets (~3‑5 min on fresh clone)…")
-  tar_make()
+  targets::tar_make()
 }
 
-raw            <- tar_read(raw)
-site           <- tar_read(site)
-taxa           <- tar_read(taxa)
-alpha          <- tar_read(alpha)
-comm           <- tar_read(comm)
-beta_bc        <- tar_read(beta_bc)
-fig_heat       <- tar_read(fig_heat)
-fig_nmds       <- tar_read(fig_nmds)
-gamma_all      <- tar_read(gamma_all)
-gamma_region   <- tar_read(gamma_region)
-rare_region    <- tar_read(rare_region)
-rare_raw       <- tar_read(rare_raw)
-beta_permanova <- tar_read(beta_permanova)
-fig_sp_trends  <- tar_read(fig_sp_trends)
+raw            <- targets::tar_read(raw)
+site           <- targets::tar_read(site)
+taxa           <- targets::tar_read(taxa)
+alpha          <- targets::tar_read(alpha)
+comm           <- targets::tar_read(comm)
+beta_bc        <- targets::tar_read(beta_bc)
+fig_heat       <- targets::tar_read(fig_heat)
+fig_nmds       <- targets::tar_read(fig_nmds)
+gamma_all      <- targets::tar_read(gamma_all)
+gamma_region   <- targets::tar_read(gamma_region)
+rare_region    <- targets::tar_read(rare_region)
+rare_raw       <- targets::tar_read(rare_raw)
+beta_permanova <- targets::tar_read(beta_permanova)
+fig_sp_trends  <- targets::tar_read(fig_sp_trends)
 ```
 
 ## 1. Orientation
@@ -48,20 +47,21 @@ dplyr::glimpse(raw)
 **Explore time gaps between events at each site.**
 
 ```{r}
-library(ggplot2)
-
 raw |>
   dplyr::group_by(site) |>
   dplyr::arrange(datetime, .by_group = TRUE) |>
   dplyr::mutate(
     delta = as.numeric(difftime(datetime, dplyr::lag(datetime), units = "mins"))
   ) |>
-  ggplot(aes(x = delta)) +
-  geom_histogram(bins = 60, na.rm = TRUE) +
-  labs(
+  dplyr::filter(!is.na(delta) & delta > 0) |>
+  ggplot2::ggplot(ggplot2::aes(x = delta)) +
+  ggplot2::geom_histogram(bins = 60, na.rm = TRUE) +
+  ggplot2::labs(
     x = "Minutes between consecutive detections",
     y = "Frequency"
-  )
+  ) +
+  ggplot2::scale_x_log10() +
+  ggplot2::scale_y_log10()
 ```
 
 > **TASK 2.1** Why is a 5‑minute threshold for “independent events” a sensible or not sensible choice for this fauna? (≤ 40 words)
@@ -73,12 +73,31 @@ raw |>
 **Inspect alpha‑diversity metrics for all sites.**
 
 ```{r}
-alpha_long <- tidyr::pivot_longer(alpha, -site,
-                                  names_to = "metric",
-                                  values_to = "value")
+# Offset counts by excluding ubiquitous 'unknown' class: subtract 1
+alpha_adj <- dplyr::mutate(alpha,
+  richness = pmax(richness - 1, 0),
+  chao1    = pmax(chao1 - 1, 0)
+)
 
-ggplot(alpha_long, aes(x = metric, y = value)) +
-  geom_boxplot()
+# Panel 1: abundance-like metrics (counts)
+alpha_long_counts <- tidyr::pivot_longer(
+  dplyr::select(alpha_adj, site, richness, chao1),
+  -site, names_to = "metric", values_to = "value"
+)
+
+ggplot2::ggplot(alpha_long_counts, ggplot2::aes(x = metric, y = value)) +
+  ggplot2::geom_boxplot()
+```
+
+```{r}
+# Panel 2: entropy/evenness metrics
+alpha_long_entropy <- tidyr::pivot_longer(
+  dplyr::select(alpha_adj, site, pielou, shannon, simpson),
+  -site, names_to = "metric", values_to = "value"
+)
+
+ggplot2::ggplot(alpha_long_entropy, ggplot2::aes(x = metric, y = value)) +
+  ggplot2::geom_boxplot()
 ```
 
 > **TASK 3.1** Choose one site whose Shannon index is notably high or low. State an ecological hypothesis to explain the pattern (≤ 40 words).
@@ -86,8 +105,12 @@ ggplot(alpha_long, aes(x = metric, y = value)) +
 ### 3.2  Total (γ) diversity
 
 ```{r}
-gamma_all     # prints scalar
-gamma_region  # prints tibble
+# Subtract 1 to discount the 'unknown' species placeholder
+gamma_all_adj    <- gamma_all - 1L
+gamma_region_adj <- dplyr::mutate(gamma_region, gamma = gamma - 1L)
+
+gamma_all_adj     # prints scalar (adjusted)
+gamma_region_adj  # prints tibble (adjusted)
 ```
 > **TASK 3.2** How much of the γ diversity is captured in wet vs dry sites? (≤ 30 words)
 
@@ -128,6 +151,7 @@ beta_permanova
 ```
 
 > **TASK 4.2** Interpret the pseudo-F and p-value (≤ 40 words).
+The PERMANOVA (adonis2) tests whether community composition differs by habitat type, using a permutation test on Bray–Curtis dissimilarities. A larger pseudo‑F with a very small p‑value indicates strong separation of wet vs dry communities (e.g., F ≈ 6.8, p < 0.001 suggests clear compositional differences).
 
 ### 4.3  Species spotlight
 
@@ -144,8 +168,9 @@ fig_sp_trends
 **Link alpha metrics to species traits (from the taxa table).**
 
 ```{r}
-# Example join; adapt if your key differs
-alpha |> dplyr::left_join(site, by = "site")
+# Example structure view (joined alpha + site metadata)
+alpha_site <- dplyr::left_join(alpha, site, by = "site")
+utils::str(alpha_site)
 ```
 
 > **TASK 5.1** If larger‑bodied taxa are more detectable, what pattern would you expect in the alpha metrics? Test it with a quick plot or summary, and comment (≤ 50 words).
@@ -166,7 +191,7 @@ You can load any pipeline object into your R environment and explore it.
 
 ```{r}
 # Assign the 'alpha' site diversity table to your workspace
-alpha_local <- tar_read(alpha)
+alpha_local <- targets::tar_read(alpha)
 
 # view the whole table in RStudio
 alpha_local
@@ -178,7 +203,7 @@ alpha_local
   e.g. plot Chao1 vs. Shannon diversity for all sites
 
   ```{r}
-  alpha_tbl <- tar_read(alpha)
+  alpha_tbl <- targets::tar_read(alpha)
   plot(alpha_tbl$chao1, alpha_tbl$shannon,
        xlab = "Chao1", ylab = "Shannon", pch = 16)
   ```
@@ -186,20 +211,20 @@ alpha_local
 * **Investigate site metadata**
 
   ```{r}
-  site_tbl <- tar_read(site)
-  summary(site_tbl)
+  site_tbl <- targets::tar_read(site)
+  summary(dplyr::select(site_tbl, type, leaf_litter, cwd, can_foliage))
   ```
 
 * **Make a custom plot**
 
   ```{r}
-  library(ggplot2)
-  taxa_tbl <- tar_read(taxa)
-  ggplot(taxa_tbl, aes(x = status, fill = status)) +
-    geom_bar(show.legend = FALSE) +
-    labs(title = "Taxon status in Tasmanian fauna",
+  taxa_tbl <- targets::tar_read(taxa)
+  ggplot2::ggplot(dplyr::filter(taxa_tbl, !is.na(status) & status != "na"),
+                  ggplot2::aes(x = status, fill = status)) +
+    ggplot2::geom_bar(show.legend = FALSE) +
+    ggplot2::labs(title = "Taxon status in Tasmanian fauna",
         x = "Status", y = "Frequency") +
-    theme_minimal()
+    ggplot2::theme_minimal()
   ```
 
 > **TASK 7.1** Are native or introduced taxa more common in this camera-trap dataset? What does this suggest about Tasmania’s fauna?
@@ -210,12 +235,10 @@ alpha_local
 
   ```{r}
   # For interactive use of helpers:
-  library(dplyr)
-  library(tidyr)
   source("R/helpers_metrics.R")
 
-  joined <- tar_read(joined)
-  custom <- joined[joined$region == "dry", ]
+  joined <- targets::tar_read(joined)
+  custom <- joined[joined$type == "dry", ]
   calc_alpha(custom)
   ```
 

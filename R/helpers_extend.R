@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # These lightweight helpers slot into _targets.R for the “stretch” analyses:
 #   * calc_rarefaction():  ggplot of rarefaction curves for a community matrix
-#   * permanova_region():  PERMANOVA on Bray–Curtis vs a `region` factor
+#   * permanova_region():  PERMANOVA on Bray–Curtis vs a `type` factor
 #   * species_trend():     Event‑count table for focal species across sites
 # 
 # All follow the explicit‑import rule (import::from), no side effects.
@@ -30,10 +30,12 @@ calc_rarefaction <- function(comm_mat, step = 1) {
     counts <- comm_mat[i, ]
     n_tot  <- sum(counts)
 
-    # skip sites with fewer than `step` events
-    if (n_tot < step) next
+    # need at least 2 individuals/events for rarefaction to be meaningful
+    if (n_tot < 2L) next
 
-    subs  <- seq(step, n_tot, by = step)
+    # start subsampling from 2 to avoid vegan warnings at size 1
+    start <- max(2L, as.integer(step))
+    subs  <- seq(start, n_tot, by = step)
     s_hat <- rarefy(counts, sample = subs)
 
     curves[[i]] <- data.frame(
@@ -55,16 +57,16 @@ calc_rarefaction <- function(comm_mat, step = 1) {
     )
 }
 
-#' PERMANOVA for wet vs dry (or any) regions
+#' PERMANOVA for wet vs dry (or any) types
 #'
 #' @param dist_obj  vegan::vegdist object (Bray–Curtis)
-#' @param meta_df   data frame with columns site and region
+#' @param meta_df   data frame with columns site and type
 #' @return          adonis2 result (data.frame)
 #' @export
 permanova_region <- function(dist_obj, meta_df) {
   # adonis2 expects one row per site in the metadata
-  meta_unique <- distinct(meta_df, site, region)
-  adonis2(dist_obj ~ region, data = meta_unique)
+  meta_unique <- distinct(meta_df, site, type)
+  adonis2(dist_obj ~ type, data = meta_unique)
 }
 
 #' Event counts for focal species across sites

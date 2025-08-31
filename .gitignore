@@ -58,7 +58,9 @@ renv/test_dat/
 # Quarto / rmarkdown artefacts
 *.html                  # rendered notebooks
 *.knit.md
-practicum_files/        # html asset dir (JS/CSS/img) 
+/practicum_files/*         
+*.html
+practicum_files         # html asset dir (JS/CSS/img)
 
 # _targets
 # The object store is committed ONCE; ignore future changes
