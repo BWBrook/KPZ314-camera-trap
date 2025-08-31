@@ -51,10 +51,10 @@ dplyr::glimpse(raw)
 library(ggplot2)
 
 raw |>
-  dplyr::group_by(camera_site) |>
-  dplyr::arrange(timestamp, .by_group = TRUE) |>
+  dplyr::group_by(site) |>
+  dplyr::arrange(datetime, .by_group = TRUE) |>
   dplyr::mutate(
-    delta = as.numeric(difftime(timestamp, dplyr::lag(timestamp), units = "mins"))
+    delta = as.numeric(difftime(datetime, dplyr::lag(datetime), units = "mins"))
   ) |>
   ggplot(aes(x = delta)) +
   geom_histogram(bins = 60, na.rm = TRUE) +
@@ -73,7 +73,7 @@ raw |>
 **Inspect alpha‑diversity metrics for all sites.**
 
 ```{r}
-alpha_long <- tidyr::pivot_longer(alpha, -camera_site,
+alpha_long <- tidyr::pivot_longer(alpha, -site,
                                   names_to = "metric",
                                   values_to = "value")
 
@@ -145,7 +145,7 @@ fig_sp_trends
 
 ```{r}
 # Example join; adapt if your key differs
-alpha |> dplyr::left_join(site, by = "camera_site")
+alpha |> dplyr::left_join(site, by = "site")
 ```
 
 > **TASK 5.1** If larger‑bodied taxa are more detectable, what pattern would you expect in the alpha metrics? Test it with a quick plot or summary, and comment (≤ 50 words).

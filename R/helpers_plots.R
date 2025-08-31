@@ -14,12 +14,12 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
               value.name = "bray")
 
   # add region for both sites
-  meta_small <- select(meta_df, camera_site, region)
+  meta_small <- select(meta_df, site, region)
 
   mlt <- left_join(mlt, meta_small,
-                   by = c("site1" = "camera_site")) |>
+                   by = c("site1" = "site")) |>
          left_join(meta_small,
-                   by = c("site2" = "camera_site"),
+                   by = c("site2" = "site"),
                    suffix = c("_1", "_2"))
 
   # keep only within-region comparisons
@@ -38,13 +38,13 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
 plot_nmds <- function(dist_obj, meta_df, k = 2) {
   ord  <- metaMDS(dist_obj, k = k, trymax = 50, autotransform = FALSE)
   sco  <- as.data.frame(scores(ord, display = "sites"))
-  sco$camera_site <- rownames(sco)
+  sco$site <- rownames(sco)
 
-  dat  <- left_join(sco, meta_df, by = "camera_site")
+  dat  <- left_join(sco, meta_df, by = "site")
 
   ggplot(dat, aes(x = NMDS1, y = NMDS2, colour = region)) +
     geom_point(size = 3, alpha = 0.8) +
-    geom_text(aes(label = camera_site), vjust = -0.4, size = 3) +
+    geom_text(aes(label = site), vjust = -0.4, size = 3) +
     theme_minimal() +
     labs(title = "NMDS ordination (Bray–Curtis)",
          colour = "Region")

@@ -58,24 +58,24 @@ calc_rarefaction <- function(comm_mat, step = 1) {
 #' PERMANOVA for wet vs dry (or any) regions
 #'
 #' @param dist_obj  vegan::vegdist object (Bray–Curtis)
-#' @param meta_df   data frame with columns camera_site and region
+#' @param meta_df   data frame with columns site and region
 #' @return          adonis2 result (data.frame)
 #' @export
 permanova_region <- function(dist_obj, meta_df) {
   # adonis2 expects one row per site in the metadata
-  meta_unique <- distinct(meta_df, camera_site, region)
+  meta_unique <- distinct(meta_df, site, region)
   adonis2(dist_obj ~ region, data = meta_unique)
 }
 
 #' Event counts for focal species across sites
 #'
-#' @param df           joined data frame with columns camera_site, class_name, event
-#' @param species_vec  character vector of focal species (class_name values)
-#' @return             wide table: camera_site × species, values = event counts
+#' @param df           joined data frame with columns site, common, event
+#' @param species_vec  character vector of focal species (common values)
+#' @return             wide table: site × species, values = event counts
 #' @export
 species_trend <- function(df, species_vec) {
   df |>
-    filter(class_name %in% species_vec) |>
-    count(camera_site, class_name, name = "events") |>
-    pivot_wider(names_from = class_name, values_from = events, values_fill = 0)
+    filter(common %in% species_vec) |>
+    count(site, common, name = "events") |>
+    pivot_wider(names_from = common, values_from = events, values_fill = 0)
 }

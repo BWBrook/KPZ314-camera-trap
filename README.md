@@ -6,7 +6,6 @@ Students use an expert-validated MEWC camera-trap table to derive site- and comm
 ## Repo structure
 
 ```
-/bootstrap_env.R      # renv bootstrap
 /_targets.R           # hidden pipeline (pre-built in _targets/)
 R/                    # helper functions, one task each
 practicum.qmd         # the workbook you knit
@@ -17,16 +16,9 @@ _targets/             # small (~1 MB) cache of pre-made targets
 
 ## Quick-start (students)
 
-```bash
-git clone https://github.com/UTasEco/KPZ314-camera-trap.git
-cd KPZ314-camera-trap
-Rscript bootstrap_env.R      # installs packages, links renv
-quarto render practicum.qmd  # or click “Render” in RStudio
-````
-
-Or in RStudio, create a Project in the git directory then:
+In RStudio, unzip the directory then:
 ```r
-source(bootstrap_env.R) # installs all R packages via renv
+renv::restore() # installs all R packages via renv
 quarto::quarto_render("practicum.qmd") # render the md and HTML
 ```
 

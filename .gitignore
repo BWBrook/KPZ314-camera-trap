@@ -53,6 +53,7 @@ rsconnect/
 # renv
 renv/library/
 renv/staging/
+renv/test_dat/
 
 # Quarto / rmarkdown artefacts
 *.html                  # rendered notebooks

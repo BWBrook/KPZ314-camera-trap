@@ -7,26 +7,26 @@ import::here(diversity, estimateR, .from = "vegan")
 #' Alpha‑diversity metrics per site
 #'
 #' @param df Data frame containing at minimum:
-#'   * camera_site  (factor or character)
-#'   * class_name   (factor or character)
+#'   * site  (factor or character)
+#'   * common   (factor or character)
 #'   * event        (integer – independent events)
 #'
-#' @return tibble with one row per camera_site and columns:
+#' @return tibble with one row per site and columns:
 #'   richness, shannon, simpson, pielou, chao1
 #'
 #' @export
 calc_alpha <- function(df) {
   ## collapse to a site × species abundance table (event counts)
   mat <- df |>
-    group_by(camera_site, class_name, event) |>
+    group_by(site, common, event) |>
     summarise(n = 1L, .groups = "drop") |>
-    group_by(camera_site, class_name) |>
+    group_by(site, common) |>
     summarise(events = n(), .groups = "drop") |>
-    pivot_wider(names_from = class_name,
+    pivot_wider(names_from = common,
                 values_from = events,
                 values_fill = 0L)
 
-  site_id <- mat$camera_site
+  site_id <- mat$site
   mat_num <- as.matrix(mat[ , -1, drop = FALSE ])
 
   richness <- rowSums(mat_num > 0)
@@ -36,7 +36,7 @@ calc_alpha <- function(df) {
   chao1    <- unname(apply(mat_num, 1, function(v) estimateR(v)["S.chao1"]))
 
   tibble(
-    camera_site = site_id,
+    site = site_id,
     richness    = richness,
     shannon     = shannon,
     simpson     = simpson,
@@ -47,22 +47,22 @@ calc_alpha <- function(df) {
 
 #' Community matrix (sites × species, abundance = event count)
 #'
-#' @param df Data frame with camera_site, class_name, event
-#' @return matrix; row names = camera_site, col names = class_name
+#' @param df Data frame with site, common, event
+#' @return matrix; row names = site, col names = common
 #' @export
 build_comm_matrix <- function(df) {
   wide <- df |>
-    group_by(camera_site, class_name, event) |>
+    group_by(site, common, event) |>
     summarise(n = 1L, .groups = "drop") |>
-    group_by(camera_site, class_name) |>
+    group_by(site, common) |>
     summarise(events = n(), .groups = "drop") |>
     pivot_wider(
-      names_from  = class_name,
+      names_from  = common,
       values_from = events,
       values_fill = 0L
     )
 
   mat <- as.matrix(wide[ , -1, drop = FALSE ])
-  rownames(mat) <- wide$camera_site
+  rownames(mat) <- wide$site
   mat
 }
