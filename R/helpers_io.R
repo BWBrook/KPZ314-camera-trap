@@ -28,6 +28,6 @@ read_mewc <- function(path = here("data", "kpz314_2025_cam_data.csv")) {
 # Expects at least: common, body_mass, trophic_group, …
 #' @param path Relative path to csv (default = data/taxa.csv)
 #' @export
-read_taxa <- function(path = here("data", "kzp314_2025_species_list.csv")) {
+read_taxa <- function(path = here("data", "kpz314_2025_species_list.csv")) {
   read_csv(path, show_col_types = FALSE)
 }
