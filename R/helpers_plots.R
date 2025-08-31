@@ -1,10 +1,12 @@
 # R/helpers_plots.R
 
 import::here(ggplot, aes, geom_tile, scale_fill_gradient, geom_point,
-             geom_text, facet_wrap, theme_minimal, labs, .from = "ggplot2")
+             geom_text, facet_wrap, theme_minimal, labs, coord_sf,
+             scale_colour_manual, coord_quickmap, geom_sf, .from = "ggplot2")
 import::here(melt, .from = "reshape2")
 import::here(select, left_join, filter, .from = "dplyr")
 import::here(metaMDS, scores, .from = "vegan")
+import::here(st_as_sf, st_transform, st_bbox, st_as_sfc, st_buffer, .from = "sf")
 
 # Heatmap of Bray–Curtis dissimilarity
 plot_turnover_heatmap <- function(dist_obj, meta_df) {
@@ -48,4 +50,45 @@ plot_nmds <- function(dist_obj, meta_df, k = 2) {
     theme_minimal() +
     labs(title = "NMDS ordination (Bray–Curtis)",
          colour = "Type")
+}
+
+# Site map with optional OSM basemap (if ggspatial is installed)
+plot_site_map <- function(meta_df, buffer_m = 500L) {
+  stopifnot(all(c("lat", "lon", "type") %in% names(meta_df)))
+
+  has_tiles <- "ggspatial" %in% rownames(utils::installed.packages())
+
+  if (has_tiles) {
+    # Work in Web Mercator for tiles, compute buffered extent in meters
+    pts_ll <- st_as_sf(meta_df, coords = c("lon", "lat"), crs = 4326)
+    pts_m  <- st_transform(pts_ll, 3857)
+    bb_m   <- st_bbox(st_buffer(st_as_sfc(st_bbox(pts_m)), dist = as.numeric(buffer_m)))
+
+    ggplot() +
+      ggspatial::annotation_map_tile(zoomin = 0, progress = "none") +
+      geom_sf(data = pts_m, aes(colour = type), size = 3) +
+      coord_sf(crs = 3857,
+               xlim = c(bb_m[["xmin"]], bb_m[["xmax"]]),
+               ylim = c(bb_m[["ymin"]], bb_m[["ymax"]]),
+               expand = FALSE) +
+      theme_minimal() +
+      labs(title = "Camera sites") +
+      scale_colour_manual(values = c(dry = "sienna3", wet = "steelblue4"),
+                          name = "Type")
+  } else {
+    # Fallback: lon/lat scatter with equal-aspect mapping and buffered bounds
+    mean_lat <- mean(meta_df$lat, na.rm = TRUE)
+    lat_buf_deg <- buffer_m / 111320
+    lon_buf_deg <- buffer_m / (111320 * cos(mean_lat * pi / 180))
+    xlim <- range(meta_df$lon, na.rm = TRUE) + c(-lon_buf_deg, lon_buf_deg)
+    ylim <- range(meta_df$lat, na.rm = TRUE) + c(-lat_buf_deg, lat_buf_deg)
+
+    ggplot(meta_df, aes(x = lon, y = lat, colour = type)) +
+      geom_point(size = 3) +
+      coord_quickmap(xlim = xlim, ylim = ylim, expand = FALSE) +
+      theme_minimal() +
+      labs(title = "Camera sites", x = "Longitude", y = "Latitude") +
+      scale_colour_manual(values = c(dry = "sienna3", wet = "steelblue4"),
+                          name = "Type")
+  }
 }

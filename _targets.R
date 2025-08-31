@@ -22,6 +22,7 @@ list(
   tar_target(gamma_region, joined |> group_by(type) |>
                 summarise(gamma = n_distinct(common))),
   tar_target(comm,     build_comm_matrix(joined)),
+  tar_target(fig_site_map, plot_site_map(site)),
   tar_target(
     comm_region,
     joined |>

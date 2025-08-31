@@ -22,6 +22,7 @@ comm           <- targets::tar_read(comm)
 beta_bc        <- targets::tar_read(beta_bc)
 fig_heat       <- targets::tar_read(fig_heat)
 fig_nmds       <- targets::tar_read(fig_nmds)
+fig_site_map   <- targets::tar_read(fig_site_map)
 gamma_all      <- targets::tar_read(gamma_all)
 gamma_region   <- targets::tar_read(gamma_region)
 rare_region    <- targets::tar_read(rare_region)
@@ -38,7 +39,15 @@ fig_sp_trends  <- targets::tar_read(fig_sp_trends)
 dplyr::glimpse(raw)
 ```
 
-> **TASK 1.1** In ≤ 50 words, explain why the data are encoded in this way.
+> **TASK 1.0** Think about why the data are encoded in this way.
+
+### 1.1 Map of camera sites
+
+```{r}
+fig_site_map
+```
+
+> **TASK 1.1** The sites are clearly separated spatially. Is this the only relevant difference?
 
 ---
 
