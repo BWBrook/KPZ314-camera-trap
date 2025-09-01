@@ -7,6 +7,7 @@ execute:
 
 ```{r setup, include=FALSE}
 targets::tar_config_set(script = "_targets.R")
+targets::tar_source("R")
 
 # auto‑build if the cache is empty
 if (!targets::tar_exist_objects(names = "raw")) {
@@ -21,7 +22,11 @@ alpha          <- targets::tar_read(alpha)
 comm           <- targets::tar_read(comm)
 beta_bc        <- targets::tar_read(beta_bc)
 fig_heat       <- targets::tar_read(fig_heat)
+fig_heat_bc    <- targets::tar_read(fig_heat_bc)
+fig_heat_jac   <- targets::tar_read(fig_heat_jac)
 fig_nmds       <- targets::tar_read(fig_nmds)
+fig_nmds_jac   <- targets::tar_read(fig_nmds_jac)
+nmds_stats     <- targets::tar_read(nmds_stats)
 fig_site_map   <- targets::tar_read(fig_site_map)
 fig_gap        <- targets::tar_read(fig_gap)
 gamma_all      <- targets::tar_read(gamma_all)
@@ -155,26 +160,43 @@ Sampling sufficiency and coverage: the endpoints on each rarefaction curve show 
 
 ## 4. Community turnover
 
-### 4.1  Visualise site compositional turnover and community structure.
+Bray–Curtis (abundance) and Jaccard (presence–absence) emphasise different aspects of community turnover. Report results for both: abundance patterns (dominance) vs composition (which species are present).
+
+### 4.1  Within-habitat dissimilarities and community structure
 
 ```{r}
-fig_heat
+fig_heat_bc
+```
+
+```{r}
+fig_heat_jac
+```
+
+```{r}
+cat(turnover_caption())
 ```
 
 ```{r}
 plotly::ggplotly(fig_nmds)
 ```
 
+```{r}
+fig_nmds_jac
+```
+
+```{r}
+knitr::kable(nmds_stats, caption = "NMDS fit statistics (stress) for each distance")
+```
+
 > **TASK 4.1** Name two clusters of sites that appear compositionally similar. Suggest one abiotic driver that could explain the pattern (≤ 40 words).
 
-### 4.2  Are wet vs dry communities distinct?
+### 4.2  Are wet vs dry communities distinct (location) and equally dispersed?
 
 ```{r}
 beta_permanova
 ```
 
-> **TASK 4.2** Interpret the pseudo-F and p-value (≤ 40 words).
-The PERMANOVA (adonis2) tests whether community composition differs by habitat type, using a permutation test on Bray–Curtis dissimilarities. A larger pseudo‑F with a very small p‑value indicates strong separation of wet vs dry communities (e.g., F ≈ 6.8, p < 0.001 suggests clear compositional differences).
+Report R² (effect size) and permutation p for each distance. If `dispersion p < 0.05`, then groups differ in spread; interpret R² as partly/mostly driven by dispersion rather than centroid separation (location).
 
 ### 4.3  Species spotlight
 

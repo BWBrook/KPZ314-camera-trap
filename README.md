@@ -39,6 +39,10 @@ We report alpha diversity using Hill numbers (q = 0, 1, 2) with bootstrap CIs:
 - Habitat-level gamma with site-bootstrap CIs is available via `gamma_by_habitat`; overall gamma via `gamma_all_ci`.
 - Rarefaction plots annotate sampling coverage (S_obs/Chao1) at the observed endpoint, and include a wet vs dry overlay.
 
+### Community turnover (paired distances)
+
+We quantify between-site turnover with both Bray–Curtis (abundance-sensitive) and Jaccard (presence–absence). Visuals: `fig_heat_bc`, `fig_heat_jac`, `fig_nmds` (Bray), and `fig_nmds_jac` (Jaccard), with NMDS fit stats in `nmds_stats`. Inference combines PERMANOVA (location; `R²`, `p_perm`) and a dispersion test (`disp_p`) in `beta_permanova`. If `disp_p < 0.05`, interpret the location effect cautiously.
+
 ## Rebuilding the pipeline (optional)
 
 ```r

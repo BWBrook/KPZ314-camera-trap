@@ -1,6 +1,6 @@
 # _targets.R  — executed only by staff *before* the lab -----------------
 import::from("targets",   tar_option_set, tar_target, tar_source)
-import::from("dplyr",     left_join, group_by, summarise, n, n_distinct, arrange)
+import::from("dplyr",     left_join, group_by, summarise, n, n_distinct, arrange, bind_rows)
 import::from("readr",     read_csv)
 import::from("here",      here)
 import::from("tibble",    column_to_rownames)
@@ -55,10 +55,23 @@ list(
   tar_target(rare_region,     rarefaction_by_group(comm, site, group_col = "type", step = 5L)),
   tar_target(gamma_by_habitat, gamma_hill(joined, group = "type", n_boot = 1000L, seed = 1L)),
   tar_target(gamma_all_ci,     gamma_hill(events_default, group = "all", n_boot = 1000L, seed = 1L)),
-  tar_target(beta_permanova,  permanova_region(beta_bc, site)),           
-  tar_target(beta_bc,         vegdist(comm, "bray")),
-  tar_target(fig_heat,        plot_turnover_heatmap(beta_bc, site)),
-  tar_target(fig_nmds,        plot_nmds(beta_bc, joined)),
+  # Distances and turnover visuals (paired: Bray–Curtis, Jaccard)
+  tar_target(beta_bc,         compute_dist(comm, method = "bray")),
+  tar_target(beta_jac,        compute_dist(comm, method = "jaccard")),
+  tar_target(fig_heat_bc,     plot_heat_by_group(beta_bc, site, group_col = "type")),
+  tar_target(fig_heat_jac,    plot_heat_by_group(beta_jac, site, group_col = "type")),
+  # keep legacy name mapping to Bray–Curtis heatmap for backward compatibility
+  tar_target(fig_heat,        fig_heat_bc),
+  tar_target(nmds_bc,         nmds_with_hulls(beta_bc, site, group_col = "type", k = 2L, seed = 1L)),
+  tar_target(nmds_jac,        nmds_with_hulls(beta_jac, site, group_col = "type", k = 2L, seed = 1L)),
+  tar_target(fig_nmds,        nmds_bc$fig),           # preserve existing name for Bray–Curtis
+  tar_target(fig_nmds_jac,    nmds_jac$fig),
+  tar_target(nmds_stats,      bind_rows(nmds_bc$stats, nmds_jac$stats)),
+  tar_target(beta_tests,      bind_rows(
+                                    permanova_and_dispersion(beta_bc, site, group_col = "type", n_perm = 999L, seed = 1L),
+                                    permanova_and_dispersion(beta_jac, site, group_col = "type", n_perm = 999L, seed = 1L)
+                                  )),
+  tar_target(beta_permanova,  beta_tests),
   tar_target(sp_table,        species_trend(joined,
                                   c("tasmanian_pademelon", "brushtail_possum"))),
   tar_target(fig_sp_trends, {

@@ -57,16 +57,18 @@ calc_rarefaction <- function(comm_mat, step = 1) {
     )
 }
 
-#' PERMANOVA for wet vs dry (or any) types
+#' PERMANOVA wrapper (legacy)
 #'
-#' @param dist_obj  vegan::vegdist object (Bray–Curtis)
+#' Maintained for backward compatibility. Delegates to
+#' permanova_and_dispersion() for Bray–Curtis vs `type` and returns the
+#' tidy table structure used in the practicum.
+#'
+#' @param dist_obj  stats::dist (typically Bray–Curtis)
 #' @param meta_df   data frame with columns site and type
-#' @return          adonis2 result (data.frame)
+#' @return          tibble with columns distance, term, df, pseudo_F, R2, p_perm, disp_F, disp_p, note
 #' @export
 permanova_region <- function(dist_obj, meta_df) {
-  # adonis2 expects one row per site in the metadata
-  meta_unique <- distinct(meta_df, site, type)
-  adonis2(dist_obj ~ type, data = meta_unique)
+  permanova_and_dispersion(dist_obj, meta_df, group_col = "type", n_perm = 999L, seed = 1L)
 }
 
 #' Event counts for focal species across sites

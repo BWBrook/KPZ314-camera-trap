@@ -2,11 +2,14 @@
 
 import::here(ggplot, aes, geom_tile, scale_fill_gradient, geom_point,
              geom_text, facet_wrap, theme_minimal, labs, coord_sf,
-             scale_colour_manual, coord_quickmap, geom_sf, .from = "ggplot2")
+             scale_colour_manual, coord_quickmap, geom_sf, geom_polygon,
+             guides, guide_none, .from = "ggplot2")
 import::here(melt, .from = "reshape2")
-import::here(select, left_join, filter, .from = "dplyr")
+import::here(select, left_join, filter, tibble, .from = "dplyr")
 import::here(metaMDS, scores, .from = "vegan")
 import::here(st_as_sf, st_transform, st_bbox, st_as_sfc, st_buffer, .from = "sf")
+import::here(local_seed, .from = "withr")
+import::here(cli_warn, .from = "cli")
 
 # Heatmap of Bray–Curtis dissimilarity
 plot_turnover_heatmap <- function(dist_obj, meta_df) {
@@ -36,6 +39,38 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
     labs(x = "Site", y = "Site")
 }
 
+# General heatmap by within-group facets (works for any distance)
+plot_heat_by_group <- function(dist_obj, meta_df, group_col = "type") {
+  mlt <- melt(as.matrix(dist_obj),
+              varnames = c("site1", "site2"),
+              value.name = "distance")
+
+  # join group for both sites (base indexing to avoid NSE)
+  if (!("site" %in% names(meta_df))) rlang::abort("plot_heat_by_group(): meta_df must contain 'site'.")
+  if (!(group_col %in% names(meta_df))) rlang::abort(sprintf("plot_heat_by_group(): meta_df must contain '%s'.", group_col))
+  meta_small <- meta_df[, c("site", group_col)]
+  names(meta_small) <- c("site", "group")
+
+  mlt <- left_join(mlt, meta_small, by = c("site1" = "site")) |>
+    left_join(meta_small, by = c("site2" = "site"), suffix = c("_1", "_2"))
+
+  # warn if any group has <2 sites
+  counts <- table(meta_small$group)
+  if (any(counts < 2L)) cli_warn("One or more groups have <2 sites; panels may be sparse.")
+
+  mlt <- filter(mlt, group_1 == group_2)
+  method <- attr(dist_obj, "method"); if (is.null(method)) method <- "distance"
+  method_chr <- as.character(method)
+  cap <- if (method_chr %in% c("bray","jaccard")) turnover_caption(method_chr) else turnover_caption()
+
+  ggplot(mlt, aes(x = site1, y = site2, fill = distance)) +
+    geom_tile() +
+    facet_wrap(~ group_1, scales = "free", ncol = 1) +
+    scale_fill_gradient(low = "white", high = "red", name = method) +
+    theme_minimal() +
+    labs(x = "Site", y = "Site", caption = cap)
+}
+
 # NMDS ordination
 plot_nmds <- function(dist_obj, meta_df, k = 2) {
   ord  <- metaMDS(dist_obj, k = k, trymax = 50, autotransform = FALSE)
@@ -50,6 +85,55 @@ plot_nmds <- function(dist_obj, meta_df, k = 2) {
     theme_minimal() +
     labs(title = "NMDS ordination (Bray–Curtis)",
          colour = "Type")
+}
+
+# NMDS with convex hulls and stats (seeded)
+nmds_with_hulls <- function(dist_obj, meta_df, group_col = "type", k = 2L, seed = 1L) {
+  if (!("site" %in% names(meta_df))) rlang::abort("nmds_with_hulls(): meta_df must contain 'site'.")
+  if (!(group_col %in% names(meta_df))) rlang::abort(sprintf("nmds_with_hulls(): meta_df must contain '%s'.", group_col))
+
+  local_seed(as.integer(seed))
+  ord <- try(metaMDS(dist_obj, k = as.integer(k), trymax = 50, autotransform = FALSE), silent = TRUE)
+  if (inherits(ord, "try-error")) {
+    rlang::abort("nmds_with_hulls(): NMDS failed; consider k = 3.")
+  }
+  sco <- as.data.frame(scores(ord, display = "sites"))
+  sco$site <- rownames(sco)
+
+  meta_small <- meta_df[, c("site", group_col)]
+  names(meta_small) <- c("site", "group")
+  dat <- left_join(sco, meta_small, by = "site")
+
+  # build convex hulls per group when >= 3 points
+  hulls <- lapply(split(dat, dat$group), function(df) {
+    if (nrow(df) < 3L) return(NULL)
+    idx <- grDevices::chull(df$NMDS1, df$NMDS2)
+    df[idx, c("NMDS1","NMDS2","group"), drop = FALSE]
+  })
+  hulls <- do.call(rbind, hulls)
+
+  method_chr <- as.character(attr(dist_obj, "method"))
+  cap <- if (method_chr %in% c("bray","jaccard")) turnover_caption(method_chr) else turnover_caption()
+
+  p <- ggplot(dat, aes(x = NMDS1, y = NMDS2, colour = group)) +
+    { if (!is.null(hulls)) geom_polygon(
+        data = hulls,
+        aes(x = NMDS1, y = NMDS2, group = group, fill = group),
+        colour = NA, alpha = 0.2, inherit.aes = FALSE
+      ) else NULL } +
+    geom_point(size = 3, alpha = 0.85) +
+    geom_text(aes(label = site), vjust = -0.4, size = 3, show.legend = FALSE) +
+    theme_minimal() +
+    labs(title = paste0("NMDS (", method_chr, ") with convex hulls"), colour = group_col, caption = cap)
+
+  st <- tibble(
+    method = as.character(attr(dist_obj, "method")),
+    k = as.integer(k),
+    stress = as.numeric(ord$stress),
+    seed = as.integer(seed)
+  )
+
+  list(fig = p, stats = st)
 }
 
 # Site map with optional OSM basemap (if ggspatial is installed)
