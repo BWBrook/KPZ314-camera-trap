@@ -21,6 +21,7 @@ taxa           <- targets::tar_read(taxa)
 alpha          <- targets::tar_read(alpha)
 comm           <- targets::tar_read(comm)
 beta_bc        <- targets::tar_read(beta_bc)
+beta_jac       <- targets::tar_read(beta_jac)
 fig_heat       <- targets::tar_read(fig_heat)
 fig_heat_bc    <- targets::tar_read(fig_heat_bc)
 fig_heat_jac   <- targets::tar_read(fig_heat_jac)
@@ -88,6 +89,15 @@ head(rai, 8)
 
 > **TASK 2.1** Pick a gap that balances independence and sample size for this fauna. Justify briefly (≤ 40 words).
 
+```{r}
+# Any sites with zero total events (dropped from turnover distances)
+comm_mat <- targets::tar_read(comm)
+zero_sites <- names(which(rowSums(comm_mat) == 0))
+if (length(zero_sites)) {
+  cat("Note: Dropped zero-event sites from turnover distances: ", paste(zero_sites, collapse = ", "), "\n")
+}
+```
+
 ---
 
 ## 3. Site‑level diversity
@@ -124,9 +134,21 @@ ggplot2::ggplot(alpha_long_entropy, ggplot2::aes(x = metric, y = value)) +
 
 Hill numbers provide a unified view of diversity: q=0 is richness, q=1 is the effective number of species from Shannon (exp[H]), and q=2 is the inverse Simpson (dominance‑sensitive).
 
+Note: q=0 counts species (richness), q=1 weights by common species, q=2 emphasises dominants; divergence between q=0 and q=2 signals evenness differences. In our tables, hill_q0 ≡ richness.
+
 ```{r}
 # Bootstrap 95% CIs for Hill numbers and Pielou (per site)
-knitr::kable(head(alpha_ci, 12), caption = "Alpha diversity (Hill) with 95% CIs (first 12 rows)")
+knitr::kable(head(alpha_ci, 12), caption = "Alpha diversity (Hill) with percentile bootstrap 95% CIs (first 12 rows)")
+```
+
+```{r}
+# Sites with zero events (excluded from alpha CI bootstrap)
+ ev <- targets::tar_read(events_default)
+ site_counts <- dplyr::count(ev, site, name = "events")
+ zero_alpha <- setdiff(unique(ev$site), site_counts$site)
+ if (length(zero_alpha)) {
+   cat("Note: Sites excluded from alpha bootstrap (zero events): ", paste(zero_alpha, collapse = ", "))
+ }
 ```
 
 > **TASK 3.1** Choose one site whose Shannon index is notably high or low. State an ecological hypothesis to explain the pattern (≤ 40 words).
@@ -142,8 +164,12 @@ gamma_all_adj     # scalar (adjusted)
 gamma_region_adj  # by type (adjusted)
 
 # Habitat-level gamma (Hill numbers) with 95% CIs
-knitr::kable(gamma_by_habitat, caption = "Habitat-level gamma diversity (Hill) with bootstrap CIs")
+knitr::kable(gamma_by_habitat, caption = "Habitat-level gamma diversity (Hill) with site-bootstrap 95% CIs")
 ```
+
+Seeds: The pipeline sets a global seed via tar_option_set(seed = 1L); alpha and gamma bootstraps also pass seed = 1L for reproducibility.
+
+> Note: γ CIs are from site‑level resampling of pooled counts, reflecting among‑site heterogeneity rather than event noise.
 > **TASK 3.2** How much of the γ diversity is captured in wet vs dry sites? (≤ 30 words)
 
 ### 3.3  Sampling sufficiency
@@ -161,6 +187,8 @@ rare_region
 Sampling sufficiency and coverage: the endpoints on each rarefaction curve show the observed richness and its estimated coverage (S_obs/Chao1). Closer to 1 implies better sampling completeness.
 
 > **TASK 3.3.2** Do the wet and dry curves suggest similar sampling completeness across habitats? Explain in ≤ 40 words.
+
+> **TASK 3.3.3** Report the coverage values at the endpoints for wet vs dry. Which habitat is closer to asymptote?
 
 ---
 
@@ -194,6 +222,14 @@ fig_nmds_jac
 knitr::kable(nmds_stats, caption = "NMDS fit statistics (stress) for each distance")
 ```
 
+> Note: If stress > 0.2, interpret NMDS geometry cautiously; high stress indicates a poor low‑dimensional fit.
+
+Guidance:
+- If disp_p ≥ 0.05 and p_perm < 0.05: report location separation with R² and p; dispersion is homogeneous.
+- If disp_p < 0.05: “Groups differ in dispersion; R² mixes location and spread; check medians and NMDS cautiously.”
+- Metric choice: Jaccard asks “different species present?”; Bray–Curtis asks “different composition and/or dominance?”. Report both.
+
+
 > **TASK 4.1** Name two clusters of sites that appear compositionally similar. Suggest one abiotic driver that could explain the pattern (≤ 40 words).
 
 ### 4.2  Are wet vs dry communities distinct (location) and equally dispersed?
@@ -202,7 +238,23 @@ knitr::kable(nmds_stats, caption = "NMDS fit statistics (stress) for each distan
 beta_permanova
 ```
 
+Permutation seeds for Bray and Jaccard are matched (seed = 1) so p-value differences reflect the metric, not RNG.
+
 Report R² (effect size) and permutation p for each distance. If `dispersion p < 0.05`, then groups differ in spread; interpret R² as partly/mostly driven by dispersion rather than centroid separation (location).
+
+Hulls show convex envelopes, not variance. Use `disp_p` to assess spread differences.
+
+```{r}
+# Effect contrast: ΔR² = R²_bray − R²_jaccard
+targets::tar_read(beta_r2_delta)
+```
+
+```{r}
+# Optional quick sanity check: median within vs between distances
+wb_bray <- within_between_summary(beta_bc, site, "type")
+wb_jac  <- within_between_summary(beta_jac, site, "type")
+knitr::kable(dplyr::bind_rows(wb_bray, wb_jac), caption = "Median within- vs between-habitat distances")
+```
 
 ---
 
@@ -215,7 +267,7 @@ knitr::kable(glm_diag_all, caption = "GLM diagnostics (family, dispersion, sites
 ```
 
 ```{r}
-knitr::kable(glm_irrs_all, caption = "Incidence Rate Ratios (IRR) with 95% Wald CIs")
+knitr::kable(glm_irrs_all, caption = "Incidence Rate Ratios (IRR) with 95% Wald CIs (quasi uses dispersion‑inflated SEs)")
 ```
 
 If the diagnostics table notes “type dropped … separation”, inference on wet vs dry failed for that species because all events occurred in one habitat. This is a common issue for rare taxa; we drop `type` and proceed with other covariates.
@@ -226,7 +278,7 @@ for (p in fig_glm_coef) print(p)
 ```
 
 ```{r}
-# partial dependence for wet vs dry
+# partial dependence for wet vs dry (rates per 100 trap‑nights)
 for (p in fig_glm_pd_type) print(p)
 ```
 

@@ -22,6 +22,12 @@ renv::restore() # installs all R packages via renv
 quarto::quarto_render("practicum.qmd") # render the md and HTML
 ```
 
+Optional (faster installs):
+```r
+source("dependencies.R")
+pak::pkg_install(project_dependencies())
+```
+
 > Pipeline cache is pre-built; students do not run tar_make() unless they intentionally want to recompute.
 
 ### Independent events, effort, and RAI
@@ -45,7 +51,7 @@ We quantify between-site turnover with both Bray–Curtis (abundance-sensitive) 
 
 ### Habitat use models (effort‑offset GLMs)
 
-Focal‑species GLMs model event counts with a log(trap_nights) offset. We select Poisson unless overdispersed (φ > 1.5), then prefer NB if it clearly improves AIC (≥ 2), otherwise use quasi‑Poisson for robust SEs. Numeric covariates are z‑scored so IRRs are “per +1 SD”. See `glm_diag_all`, `glm_irrs_all`, `fig_glm_coef`, and `fig_glm_pd_type`.
+Focal‑species GLMs model event counts with a log(trap_nights) offset. We select Poisson unless overdispersed (φ > 1.5), then prefer NB if it clearly improves AIC (≥ 2), otherwise use quasi‑Poisson for robust SEs. Numeric covariates are z‑scored so IRRs are “per +1 SD”. Partial‑dependence plots show expected rates per 100 trap‑nights, holding other covariates at z=0. Quasi CIs are Wald with dispersion‑inflated SEs. See `glm_diag_all`, `glm_irrs_all`, `fig_glm_coef`, and `fig_glm_pd_type`.
 
 ## Rebuilding the pipeline (optional)
 

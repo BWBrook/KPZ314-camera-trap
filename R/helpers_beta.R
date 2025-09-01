@@ -21,13 +21,46 @@ compute_dist <- function(comm_mat, method = c("bray", "jaccard")) {
     rownames(mat) <- paste0("S", seq_len(nrow(mat)))
   }
 
+  # Guard: drop zero-sum rows (no events across all species) to avoid NA distances
+  rs <- rowSums(mat, na.rm = TRUE)
+  if (any(rs == 0)) {
+    dropped <- rownames(mat)[rs == 0]
+    mat <- mat[rs > 0, , drop = FALSE]
+    attr(mat, "dropped_sites") <- dropped
+  }
+
   if (method == "bray") {
     d <- vegdist(mat, method = "bray")
   } else {
     # presence–absence for Jaccard
     d <- vegdist(mat, method = "jaccard", binary = TRUE)
   }
+  # carry any dropped_sites attribute forward
+  if (!is.null(attr(mat, "dropped_sites"))) attr(d, "dropped_sites") <- attr(mat, "dropped_sites")
   d
+}
+
+#' Summarise within- vs between-group distances (median)
+#' @param dist_obj stats::dist
+#' @param meta_df data.frame with site and grouping column
+#' @param group_col grouping variable name (default "type")
+#' @return tibble(distance, within_median, between_median)
+#' @export
+within_between_summary <- function(dist_obj, meta_df, group_col = "type") {
+  import::from("reshape2", "melt")
+  import::from("dplyr", "left_join", "filter", "summarise", "mutate", "tibble")
+  mlt <- melt(as.matrix(dist_obj), varnames = c("site1", "site2"), value.name = "d")
+  meta_small <- meta_df[, c("site", group_col)]
+  names(meta_small) <- c("site", "group")
+  mlt <- left_join(mlt, meta_small, by = c("site1" = "site")) |>
+    left_join(meta_small, by = c("site2" = "site"), suffix = c("_1", "_2"))
+  within <- filter(mlt, group_1 == group_2)
+  between <- filter(mlt, group_1 != group_2)
+  tibble::tibble(
+    distance = attr(dist_obj, "method") %||% "distance",
+    within_median = stats::median(within$d, na.rm = TRUE),
+    between_median = stats::median(between$d, na.rm = TRUE)
+  )
 }
 
 #' PERMANOVA + dispersion test (betadisper) for a single grouping factor
@@ -112,4 +145,3 @@ permanova_and_dispersion <- function(dist_obj, meta_df, group_col = "type",
     note     = note
   )
 }
-

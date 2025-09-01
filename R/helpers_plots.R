@@ -8,6 +8,7 @@ import::here(ggplot, aes, geom_tile, scale_fill_gradient, geom_point,
 import::here(melt, .from = "reshape2")
 import::here(select, left_join, filter, tibble, .from = "dplyr")
 import::here(metaMDS, scores, .from = "vegan")
+import::here(ordiellipse, .from = "vegan")
 import::here(st_as_sf, st_transform, st_bbox, st_as_sfc, st_buffer, .from = "sf")
 import::here(local_seed, .from = "withr")
 import::here(cli_warn, .from = "cli")
@@ -43,7 +44,24 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
 
 # General heatmap by within-group facets (works for any distance)
 plot_heat_by_group <- function(dist_obj, meta_df, group_col = "type") {
-  mlt <- melt(as.matrix(dist_obj),
+  mat <- as.matrix(dist_obj)
+  # Build a global ordering: within each group, order sites by hclust on the submatrix
+  meta_small0 <- meta_df[, c("site", group_col)]
+  names(meta_small0) <- c("site", "group")
+  ord_levels <- character(0)
+  for (g in unique(meta_small0$group)) {
+    sites_g <- meta_small0$site[meta_small0$group == g]
+    sites_g <- intersect(sites_g, rownames(mat))
+    if (length(sites_g) >= 2L) {
+      sub <- as.dist(mat[sites_g, sites_g, drop = FALSE])
+      hc <- stats::hclust(sub, method = "average")
+      ord_levels <- c(ord_levels, sites_g[hc$order])
+    } else {
+      ord_levels <- c(ord_levels, sites_g)
+    }
+  }
+
+  mlt <- melt(mat,
               varnames = c("site1", "site2"),
               value.name = "distance")
 
@@ -61,6 +79,9 @@ plot_heat_by_group <- function(dist_obj, meta_df, group_col = "type") {
   if (any(counts < 2L)) cli_warn("One or more groups have <2 sites; panels may be sparse.")
 
   mlt <- filter(mlt, group_1 == group_2)
+  # apply global ordering for readability
+  mlt$site1 <- factor(mlt$site1, levels = ord_levels)
+  mlt$site2 <- factor(mlt$site2, levels = ord_levels)
   method <- attr(dist_obj, "method"); if (is.null(method)) method <- "distance"
   method_chr <- as.character(method)
   cap <- if (method_chr %in% c("bray","jaccard")) turnover_caption(method_chr) else turnover_caption()
@@ -132,12 +153,35 @@ nmds_with_hulls <- function(dist_obj, meta_df, group_col = "type", k = 2L, seed 
     method = as.character(attr(dist_obj, "method")),
     k = as.integer(k),
     stress = as.numeric(ord$stress),
+    warn = ifelse(as.numeric(ord$stress) > 0.2, "stress>0.2: interpret cautiously", ""),
     seed = as.integer(seed)
   )
 
   list(fig = p, stats = st)
 }
 
+# NMDS with ellipses (mean ± 1 SD) as an alternative to hulls
+nmds_with_ellipses <- function(dist_obj, meta_df, group_col = "type", k = 2L, seed = 1L) {
+  if (!("site" %in% names(meta_df))) rlang::abort("nmds_with_ellipses(): meta_df must contain 'site'.")
+  if (!(group_col %in% names(meta_df))) rlang::abort(sprintf("nmds_with_ellipses(): meta_df must contain '%s'.", group_col))
+  local_seed(as.integer(seed))
+  ord <- try(metaMDS(dist_obj, k = as.integer(k), trymax = 50, autotransform = FALSE), silent = TRUE)
+  if (inherits(ord, "try-error")) rlang::abort("nmds_with_ellipses(): NMDS failed; consider k = 3.")
+  sco <- as.data.frame(scores(ord, display = "sites"))
+  sco$site <- rownames(sco)
+  meta_small <- meta_df[, c("site", group_col)]
+  names(meta_small) <- c("site", "group")
+  dat <- left_join(sco, meta_small, by = "site")
+  method_chr <- as.character(attr(dist_obj, "method"))
+  cap <- if (method_chr %in% c("bray","jaccard")) turnover_caption(method_chr) else turnover_caption()
+  p <- ggplot(dat, aes(NMDS1, NMDS2, colour = group)) +
+    geom_point(size = 3, alpha = 0.85) +
+    theme_minimal() +
+    labs(title = paste0("NMDS (", method_chr, ") with ordiellipse"), colour = group_col, caption = cap)
+  # simple ellipse via ggplot (normal approximation)
+  p <- p + ggplot2::stat_ellipse(aes(group = group, colour = group), type = "norm")
+  list(fig = p, stats = tibble(method = method_chr, k = as.integer(k), stress = as.numeric(ord$stress), warn = ifelse(as.numeric(ord$stress) > 0.2, "stress>0.2", ""), seed = as.integer(seed)))
+}
 # Forest plot for GLM IRRs (non-intercept terms)
 plot_glm_coefs <- function(irrs_tbl) {
   df <- irrs_tbl

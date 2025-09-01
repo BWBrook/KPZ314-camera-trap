@@ -54,7 +54,12 @@ list(
   ),
   tar_target(rare_raw,        rarefaction_site(comm, step = 2L)),
   tar_target(rare_region,     rarefaction_by_group(comm, site, group_col = "type", step = 5L)),
-  tar_target(gamma_by_habitat, gamma_hill(joined, group = "type", n_boot = 1000L, seed = 1L)),
+  tar_target(gamma_by_habitat,
+    {
+      events_with_type <- dplyr::left_join(events_default, dplyr::select(site, site, type), by = "site")
+      gamma_hill(events_with_type, group = "type", n_boot = 1000L, seed = 1L)
+    }
+  ),
   tar_target(gamma_all_ci,     gamma_hill(events_default, group = "all", n_boot = 1000L, seed = 1L)),
   # Distances and turnover visuals (paired: Bray–Curtis, Jaccard)
   tar_target(beta_bc,         compute_dist(comm, method = "bray")),
@@ -67,12 +72,19 @@ list(
   tar_target(nmds_jac,        nmds_with_hulls(beta_jac, site, group_col = "type", k = 2L, seed = 1L)),
   tar_target(fig_nmds,        nmds_bc$fig),           # preserve existing name for Bray–Curtis
   tar_target(fig_nmds_jac,    nmds_jac$fig),
+  tar_target(fig_nmds_ellipse_bc,  nmds_with_ellipses(beta_bc, site, group_col = "type", k = 2L, seed = 1L)$fig),
   tar_target(nmds_stats,      bind_rows(nmds_bc$stats, nmds_jac$stats)),
   tar_target(beta_tests,      bind_rows(
                                     permanova_and_dispersion(beta_bc, site, group_col = "type", n_perm = 999L, seed = 1L),
                                     permanova_and_dispersion(beta_jac, site, group_col = "type", n_perm = 999L, seed = 1L)
                                   )),
   tar_target(beta_permanova,  beta_tests),
+  tar_target(beta_r2_delta, {
+      bt <- beta_tests
+      bray <- bt[bt$distance == "bray", , drop = FALSE]
+      jacc <- bt[bt$distance == "jaccard", , drop = FALSE]
+      tibble::tibble(delta_r2 = bray$R2 - jacc$R2)
+  }),
   tar_target(sp_table,        species_trend(joined,
                                   c("tasmanian_pademelon", "brushtail_possum"))),
   tar_target(fig_sp_trends, {

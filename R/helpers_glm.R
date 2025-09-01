@@ -58,7 +58,14 @@ prepare_species_glm_data <- function(events_df, site_df, effort_df, species,
   dat <- left_join(y_all, meta, by = "site")
 
   # ensure factor baseline for type: dry then wet
-  if ("type" %in% names(dat)) dat$type <- factor(dat$type, levels = c("dry","wet"))
+  if ("type" %in% names(dat)) {
+    if (!identical(levels(factor(dat$type)), c("dry","wet"))) {
+      dat$type <- factor(dat$type, levels = c("dry","wet"))
+      attr(dat, "type_relevelled") <- TRUE
+    } else {
+      dat$type <- factor(dat$type, levels = c("dry","wet"))
+    }
+  }
 
   # z-score numeric covariates
   num_covars <- setdiff(covars, "type")
@@ -108,6 +115,18 @@ fit_species_glm <- function(df, species) {
   terms <- terms[terms %in% names(df)]
   fml <- stats::as.formula(paste("y ~", paste(terms, collapse = " + ")))
 
+  # Multicollinearity ping among numeric z-covariates
+  numz <- c("leaf_litter_z", "cwd_z", "can_foliage_z")
+  numz <- numz[numz %in% names(df)]
+  if (length(numz) >= 2L) {
+    cm <- suppressWarnings(stats::cor(df[, numz, drop = FALSE], use = "pairwise.complete.obs"))
+    high <- FALSE
+    if (is.matrix(cm) && ncol(cm) > 1) {
+      high <- any(abs(cm[upper.tri(cm)]) > 0.7, na.rm = TRUE)
+    }
+    if (isTRUE(high)) note_vec <- c(note_vec, "high collinearity among covariates; IRRs unstable")
+  }
+
   # Poisson base fit
   m_p <- glm(fml, family = poisson(link = "log"), offset = log(trap_nights), data = df, model = TRUE)
   dfres <- max(1, m_p$df.residual)
@@ -119,13 +138,14 @@ fit_species_glm <- function(df, species) {
   chosen <- list(model = m_p, family = "poisson", dispersion = phi,
                   aic = AIC(m_p), theta = NA_real_,
                   n_sites = nrow(df), n_zero_sites = sum(df$y == 0),
-                 dropped_sites = attr(df, "dropped_sites") %||% 0L,
-                 avg_traps = avg_traps,
-                 species = as.character(species),
-                 note = {
-                   msg <- if (!has_type) c("type dropped (single level)") else character(0)
-                   paste(c(note_vec, msg), collapse = "; ")
-                 })
+                  dropped_sites = attr(df, "dropped_sites") %||% 0L,
+                  avg_traps = avg_traps,
+                  species = as.character(species),
+                  note = {
+                    msg <- if (!has_type) c("type dropped (single level)") else character(0)
+                    if (isTRUE(attr(df, "type_relevelled"))) msg <- c(msg, "type relevelled to baseline 'dry'")
+                    paste(c(note_vec, msg), collapse = "; ")
+                  })
 
   if (phi <= 1.5) return(chosen)
 
@@ -140,6 +160,7 @@ fit_species_glm <- function(df, species) {
                   n_zero_sites = chosen$n_zero_sites, dropped_sites = chosen$dropped_sites,
                   avg_traps = avg_traps,
                   species = as.character(species),
+                  aic_pois = chosen$aic, aic_nb = aic_nb, delta_aic = aic_nb - chosen$aic,
                   note = chosen$note))
     }
   }
@@ -193,6 +214,10 @@ diagnostics_table <- function(mod_info) {
     n_sites = as.integer(mod_info$n_sites),
     n_zero_sites = as.integer(mod_info$n_zero_sites),
     dropped_sites = as.integer(mod_info$dropped_sites),
+    delta_aic = as.numeric(mod_info$delta_aic %||% NA_real_),
+    pseudo_r2 = {
+      m <- mod_info$model; 1 - (m$deviance / m$null.deviance)
+    },
     note = mod_info$note %||% ""
   )
 }
@@ -227,8 +252,9 @@ partial_dependence <- function(mod_info, df = NULL, var, grid_n = 50L) {
   if (is.null(df)) abort("partial_dependence(): cannot locate training data from model.")
 
   # Baseline settings derived from the model frame to match types/levels
-  avg_traps <- mod_info$avg_traps %||% 1
-  base <- data.frame(trap_nights = avg_traps)
+  # Predict as rates per 100 trap-nights
+  rate_scale <- 100
+  base <- data.frame(trap_nights = rate_scale)
   mf <- try(stats::model.frame(mod), silent = TRUE)
   if (!inherits(mf, "try-error")) {
     resp_idx <- attr(stats::terms(mod), "response")
@@ -272,7 +298,8 @@ partial_dependence <- function(mod_info, df = NULL, var, grid_n = 50L) {
       geom_point(size = 2) +
       geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.15) +
       theme_minimal() +
-      labs(title = as.character(mod_info$species), y = "Predicted events (offset = mean trap-nights)", x = "Habitat type")
+      labs(title = as.character(mod_info$species), y = "Predicted events per 100 trap-nights", x = "Habitat type",
+           caption = "Model-based expected rate holding other covariates at z=0; bands are 95% Wald CIs.")
   } else {
     # numeric var in z-scale; be robust to missing/constant columns
     vals <- if (var %in% names(df)) suppressWarnings(as.numeric(df[[var]])) else numeric(0)
@@ -297,7 +324,8 @@ partial_dependence <- function(mod_info, df = NULL, var, grid_n = 50L) {
       geom_line() +
       geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2) +
       theme_minimal() +
-      labs(title = as.character(mod_info$species), x = paste0(var, " (z)"), y = "Predicted events (offset = mean trap-nights)")
+      labs(title = as.character(mod_info$species), x = paste0(var, " (z)"), y = "Predicted events per 100 trap-nights",
+           caption = "Model-based expected rate holding other covariates at z=0; bands are 95% Wald CIs.")
   }
 }
 
