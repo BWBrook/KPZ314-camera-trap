@@ -7,6 +7,7 @@ import::from("tibble",    column_to_rownames)
 import::from("tidyr",     pivot_wider, pivot_longer)
 import::from("vegan",     vegdist)
 import::from("ggplot2",   ggplot, aes, geom_col, scale_colour_manual)
+import::from("tibble",    tibble)
 
 tar_source("R") # load custom functions
 tar_option_set(seed = 1L)
@@ -81,4 +82,32 @@ list(
           geom_col(position = "dodge") +
           ggplot2::facet_wrap(~ type, ncol = 1)
       })
+
+  ,
+  # Habitat selection models (effort-offset GLMs)
+  # Re-enable 'cat'; remove 'cwd' as predictor (only type, leaf_litter, can_foliage)
+  tar_target(focal_species, c(
+      "bennetts_wallaby","brushtail_possum","long_nosed_potoroo",
+      "brush_bronzewing","cat"
+    )),
+  tar_target(glm_covars, c("type","leaf_litter","can_foliage")),
+  tar_target(glm_data, prepare_species_glm_data(
+      events_default, site, effort_site, species = focal_species, covars = glm_covars
+    ), pattern = map(focal_species), iteration = "list"),
+  tar_target(glm_models, fit_species_glm(
+      df = glm_data, species = attr(glm_data, "species")
+    ), pattern = map(glm_data), iteration = "list"),
+  tar_target(glm_irrs, tidy_irrs(glm_models), pattern = map(glm_models), iteration = "list"),
+  tar_target(glm_diag, diagnostics_table(glm_models), pattern = map(glm_models), iteration = "list"),
+  tar_target(glm_irrs_all, bind_rows(glm_irrs)),
+  tar_target(glm_diag_all, bind_rows(glm_diag)),
+  tar_target(fig_glm_coef, plot_glm_coefs(glm_irrs), pattern = map(glm_irrs), iteration = "list"),
+  tar_target(fig_glm_pd_type, partial_dependence(glm_models, df = NULL, var = "type"),
+             pattern = map(glm_models), iteration = "list"),
+  tar_target(fig_glm_pd_litter, partial_dependence(glm_models, df = NULL, var = "leaf_litter_z"),
+             pattern = map(glm_models), iteration = "list"),
+  tar_target(fig_glm_pd_cwd, partial_dependence(glm_models, df = NULL, var = "cwd_z"),
+             pattern = map(glm_models), iteration = "list"),
+  tar_target(fig_glm_pd_canopy, partial_dependence(glm_models, df = NULL, var = "can_foliage_z"),
+             pattern = map(glm_models), iteration = "list")
 )

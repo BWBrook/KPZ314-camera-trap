@@ -3,13 +3,15 @@
 import::here(ggplot, aes, geom_tile, scale_fill_gradient, geom_point,
              geom_text, facet_wrap, theme_minimal, labs, coord_sf,
              scale_colour_manual, coord_quickmap, geom_sf, geom_polygon,
-             guides, guide_none, .from = "ggplot2")
+             guides, guide_none, geom_pointrange, scale_x_log10, geom_vline,
+             .from = "ggplot2")
 import::here(melt, .from = "reshape2")
 import::here(select, left_join, filter, tibble, .from = "dplyr")
 import::here(metaMDS, scores, .from = "vegan")
 import::here(st_as_sf, st_transform, st_bbox, st_as_sfc, st_buffer, .from = "sf")
 import::here(local_seed, .from = "withr")
 import::here(cli_warn, .from = "cli")
+import::here(tibble, .from = "dplyr")
 
 # Heatmap of Bray–Curtis dissimilarity
 plot_turnover_heatmap <- function(dist_obj, meta_df) {
@@ -134,6 +136,35 @@ nmds_with_hulls <- function(dist_obj, meta_df, group_col = "type", k = 2L, seed 
   )
 
   list(fig = p, stats = st)
+}
+
+# Forest plot for GLM IRRs (non-intercept terms)
+plot_glm_coefs <- function(irrs_tbl) {
+  df <- irrs_tbl
+  if (!all(c("term","irr","lwr","upr","species") %in% names(df)))
+    rlang::abort("plot_glm_coefs(): missing required columns in irrs_tbl.")
+
+  df <- df[df$term != "(Intercept)", , drop = FALSE]
+  # readable term labels
+  lab_map <- c(
+    typewet = "wet vs dry",
+    leaf_litter_z = "leaf litter (+1 SD)",
+    cwd_z = "CWD (+1 SD)",
+    can_foliage_z = "canopy foliage (+1 SD)"
+  )
+  df$label <- lab_map[df$term]
+  df$label[is.na(df$label)] <- df$term
+
+  ggplot(df, aes(x = irr, y = label)) +
+    geom_vline(xintercept = 1, linetype = "dashed", colour = "grey60") +
+    geom_pointrange(aes(xmin = lwr, xmax = upr)) +
+    scale_x_log10() +
+    theme_minimal() +
+    labs(
+      title = as.character(df$species[1]),
+      x = "Incidence Rate Ratio (IRR)", y = NULL,
+      subtitle = "Numeric covariates are per +1 SD"
+    )
 }
 
 # Site map with optional OSM basemap (if ggspatial is installed)

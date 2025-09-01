@@ -40,6 +40,12 @@ tab_effort     <- targets::tar_read(tab_effort)
 alpha_ci       <- targets::tar_read(alpha_ci)
 gamma_by_habitat <- targets::tar_read(gamma_by_habitat)
 gamma_all_ci     <- targets::tar_read(gamma_all_ci)
+
+# GLM module objects
+glm_diag_all     <- targets::tar_read(glm_diag_all)
+glm_irrs_all     <- targets::tar_read(glm_irrs_all)
+fig_glm_coef     <- targets::tar_read(fig_glm_coef)
+fig_glm_pd_type  <- targets::tar_read(fig_glm_pd_type)
 ```
 
 ## 1. Orientation
@@ -198,6 +204,38 @@ beta_permanova
 
 Report R² (effect size) and permutation p for each distance. If `dispersion p < 0.05`, then groups differ in spread; interpret R² as partly/mostly driven by dispersion rather than centroid separation (location).
 
+---
+
+## 5. Habitat selection (effort‑offset GLMs)
+
+We fit effort‑offset GLMs for five focal taxa with sensible family selection (Poisson ⇒ quasi/NB if overdispersed). Numeric covariates are z‑scored, so IRRs are per +1 SD. Models include a log(trap_nights) offset.
+
+```{r}
+knitr::kable(glm_diag_all, caption = "GLM diagnostics (family, dispersion, sites)")
+```
+
+```{r}
+knitr::kable(glm_irrs_all, caption = "Incidence Rate Ratios (IRR) with 95% Wald CIs")
+```
+
+If the diagnostics table notes “type dropped … separation”, inference on wet vs dry failed for that species because all events occurred in one habitat. This is a common issue for rare taxa; we drop `type` and proceed with other covariates.
+
+```{r}
+# one forest plot per species
+for (p in fig_glm_coef) print(p)
+```
+
+```{r}
+# partial dependence for wet vs dry
+for (p in fig_glm_pd_type) print(p)
+```
+
+> TASK 5.1 Pick one species and interpret the `type` IRR (wet vs dry) with its 95% CI in ≤ 35 words.
+>
+> TASK 5.2 Which habitat covariate has the strongest effect (IRR farthest from 1)? Interpret it per +1 SD in ≤ 35 words.
+
+---
+
 ### 4.3  Species spotlight
 
 ```{r}
@@ -208,7 +246,7 @@ fig_sp_trends
 
 ---
 
-## 5. Trait exploration (stretch goal)
+## 6. Trait exploration (stretch goal)
 
 **Link alpha metrics to species traits (from the taxa table).**
 
@@ -222,13 +260,13 @@ utils::str(alpha_site)
 
 ---
 
-## 6. Reflection
+## 7. Reflection
 
 > **TASK 6.1** In ≤ 50 words, reflect on one limitation or source of bias in using camera‑trap data for community‑level inference in Tasmanian fauna.
 
 ---
 
-## 7. Free Exploration
+## 8. Free Exploration
 
 You can load any pipeline object into your R environment and explore it.
 
@@ -295,7 +333,7 @@ alpha_local
 
 ---
 
-## 8. Your Own Analysis
+## 9. Your Own Analysis
 
 Write a short script or chunk below where you try something new with the data—anything goes!
 

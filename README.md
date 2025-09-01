@@ -43,6 +43,10 @@ We report alpha diversity using Hill numbers (q = 0, 1, 2) with bootstrap CIs:
 
 We quantify between-site turnover with both Bray–Curtis (abundance-sensitive) and Jaccard (presence–absence). Visuals: `fig_heat_bc`, `fig_heat_jac`, `fig_nmds` (Bray), and `fig_nmds_jac` (Jaccard), with NMDS fit stats in `nmds_stats`. Inference combines PERMANOVA (location; `R²`, `p_perm`) and a dispersion test (`disp_p`) in `beta_permanova`. If `disp_p < 0.05`, interpret the location effect cautiously.
 
+### Habitat use models (effort‑offset GLMs)
+
+Focal‑species GLMs model event counts with a log(trap_nights) offset. We select Poisson unless overdispersed (φ > 1.5), then prefer NB if it clearly improves AIC (≥ 2), otherwise use quasi‑Poisson for robust SEs. Numeric covariates are z‑scored so IRRs are “per +1 SD”. See `glm_diag_all`, `glm_irrs_all`, `fig_glm_coef`, and `fig_glm_pd_type`.
+
 ## Rebuilding the pipeline (optional)
 
 ```r
