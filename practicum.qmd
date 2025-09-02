@@ -15,6 +15,18 @@ if (!targets::tar_exist_objects(names = "raw")) {
   targets::tar_make()
 }
 
+# Build any missing targets needed for detectability/sensitivity sections
+needed <- c(
+  "psi_curves_all","fig_psi_curves","fig_det_heat",
+  "tab_occu","fig_occu",
+  "alpha_delta_unknown_tbl","beta_delta_unknown"
+)
+missing <- needed[!targets::tar_exist_objects(names = needed)]
+if (length(missing)) {
+  message("Building missing targets: ", paste(missing, collapse = ", "))
+  targets::tar_make(names = missing)
+}
+
 raw            <- targets::tar_read(raw)
 site           <- targets::tar_read(site)
 taxa           <- targets::tar_read(taxa)
@@ -285,6 +297,118 @@ for (p in fig_glm_pd_type) print(p)
 > TASK 5.1 Pick one species and interpret the `type` IRR (wet vs dry) with its 95% CI in ≤ 35 words.
 >
 > TASK 5.2 Which habitat covariate has the strongest effect (IRR farthest from 1)? Interpret it per +1 SD in ≤ 35 words.
+
+---
+
+## 6. Imperfect detectability (occupancy)
+
+Even when a species is present, we don’t always detect it on a given day (p < 1). Below, we build daily detection histories, show how naïve occupancy ψ̂(t) rises with effort and differs by habitat, and fit a simple occupancy model for a common focal species (bennetts_wallaby).
+
+### 6.1 Daily detection histories
+
+```{r}
+det_list <- targets::tar_read(fig_det_heat)
+
+# Prefer a mid-frequency species (brushtail_possum) if available
+printed <- FALSE
+for (i in seq_along(det_list)) {
+  sp <- attr(det_list[[i]], "species")
+  if (!is.null(sp) && sp == "brushtail_possum") { print(det_list[[i]]); printed <- TRUE; break }
+}
+if (!printed && length(det_list)) print(det_list[[1]])
+```
+
+> Assumptions: days without detections are treated as non-detections; cameras are assumed operating continuously for `op_days`. We cap detection histories at up to 21 days (or fewer if deployments were shorter).
+> Timezone: Days are computed in Hobart local time (Australia/Hobart) to avoid UTC/DST boundary surprises; only the calendar date is used when forming daily occasions.
+
+### 6.2 Naïve occupancy ψ̂(t) by habitat
+
+```{r}
+psi_all <- targets::tar_read(psi_curves_all)
+knitr::kable(dplyr::filter(psi_all, day %in% c(3,7,14)),
+             caption = "Naïve occupancy ψ̂(t) at days 3, 7, and 14 (by habitat)")
+```
+
+> Denominators: All sites contribute through day `det_days_max`; we cap curves at that window so denominators remain constant when comparing ψ̂(t) across days and habitats.
+
+```{r}
+det_days_max <- targets::tar_read(det_days_max)
+cat("Note: det_days_max =", det_days_max, "days\n")
+```
+
+```{r}
+figs <- targets::tar_read(fig_psi_curves)
+for (p in figs) print(p)
+```
+
+> TASK 6.1 For one species, how many days of effort are needed for ψ̂(t) to exceed 0.8 in wet vs dry sites?
+
+### 6.3 Occupancy demo (auto-picked species)
+
+```{r}
+picked <- targets::tar_read(occ_species_auto)
+cat("Demo species:", picked, "\n")
+
+knitr::kable(targets::tar_read(tab_occu),
+             caption = "Occupancy demo (ψ by habitat; p is per-day detection probability)")
+```
+
+```{r}
+targets::tar_read(fig_occu)
+```
+
+> TASK 6.2 Report the overall ψ̂ with its 95% CI. What does the estimated per‑day detection probability p imply about required survey effort? (Use the ψ̂(t) curves by habitat for context.)
+
+Note: We fit ψ ~ type, p ~ 1. If habitat groups are nearly separated or detections are extremely sparse, the likelihood can become flat and the Hessian singular; predictions on the probability scale can still be interpreted cautiously. If instability arises, use the ψ̂(t) curves to discuss differences.
+
+> Guardrail: If ψ̂_wet ≠ ψ̂_dry but p is low, extra effort (more days) can change naïve conclusions. State this explicitly in your answer.
+
+#### 6.3a Species picker rationale
+
+We auto-pick a “pedagogical” species by choosing the one whose windowed detection rate is closest to 50% of sites (ideally within 20–80%). This yields enough 0s and 1s across sites for stable estimation and clear contrasts.
+
+```{r}
+if (!targets::tar_exist_objects(names = "det_detect_summary_all")) {
+  targets::tar_make(names = c("det_histories","det_detect_summary","det_detect_summary_all"))
+}
+
+rank_tbl <- targets::tar_read(det_detect_summary_all) |>
+  dplyr::mutate(closeness = abs(prop_overall - 0.5)) |>
+  dplyr::arrange(closeness, dplyr::desc(prop_overall)) |>
+  dplyr::mutate(
+    prop_overall = round(prop_overall, 3),
+    prop_dry     = round(prop_dry, 3),
+    prop_wet     = round(prop_wet, 3),
+    closeness    = round(closeness, 3)
+  ) |>
+  head(7)
+
+knitr::kable(rank_tbl, caption = "Species ranked by windowed detection rate closeness to 0.5 (lower is better)")
+```
+
+### 6.4 Sensitivity: excluding ‘unknown_animal’
+
+```{r}
+if (!targets::tar_exist_objects(names = "alpha_delta_unknown_tbl")) {
+  targets::tar_make(names = "alpha_delta_unknown_tbl")
+}
+knitr::kable(targets::tar_read(alpha_delta_unknown_tbl),
+             caption = "Alpha metric deltas (no 'unknown_animal' minus all)")
+```
+
+```{r}
+targets::tar_read(beta_delta_unknown)
+```
+
+```{r}
+# Small effect-size summary students can cite
+sens <- targets::tar_read(beta_delta_unknown)
+knitr::kable(sens, caption = "Unknown-animal sensitivity: mean |Δ| and Pearson r for Bray/Jaccard (upper triangle)")
+```
+
+> Interpretation hint: If r is near 1 and mean |Δ| is small, distances barely move when excluding ‘unknown_animal’. If r is lower and mean |Δ| is non-trivial, composition/dominance shifts materially.
+
+> TASK 6.3 Which metrics appear robust to excluding ‘unknown_animal’? Briefly justify.
 
 ---
 

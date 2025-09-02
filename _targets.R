@@ -122,4 +122,56 @@ list(
              pattern = map(glm_models), iteration = "list"),
   tar_target(fig_glm_pd_canopy, partial_dependence(glm_models, df = NULL, var = "can_foliage_z"),
              pattern = map(glm_models), iteration = "list")
+  ,
+  # Detectability: daily detection histories, ψ̂(t) curves, occupancy demo, and unknown sensitivity
+  tar_target(detect_species, focal_species),
+  tar_target(det_days_max, {
+      md <- suppressWarnings(floor(min(site$op_days, na.rm = TRUE)))
+      as.integer(max(1L, min(21L, ifelse(is.finite(md), md, 21L))))
+    }
+  ),
+  tar_target(det_histories,
+    detection_history_for_species(events_default, site, species = detect_species, max_days = det_days_max),
+    pattern = map(detect_species), iteration = "list"
+  ),
+  tar_target(fig_det_heat,
+    plot_detection_heatmap(det_histories$mat, det_histories$meta, det_histories$species),
+    pattern = map(det_histories), iteration = "list"
+  ),
+  tar_target(psi_curves,
+    naive_psi_curves(det_histories$mat, det_histories$meta),
+    pattern = map(det_histories), iteration = "list"
+  ),
+  tar_target(psi_curves_all, bind_rows(psi_curves)),
+  tar_target(fig_psi_curves,
+    plot_psi_curves(psi_curves),
+    pattern = map(psi_curves), iteration = "list"
+  ),
+  # Unknown-animal sensitivity
+  tar_target(events_no_unknown, events_without_unknown(events_default)),
+  tar_target(alpha_no_unknown,  calc_alpha(events_no_unknown)),
+  tar_target(alpha_delta_unknown_tbl, alpha_delta_unknown(alpha, alpha_no_unknown)),
+  tar_target(comm_no_unknown,    build_comm_matrix(events_no_unknown)),
+  tar_target(beta_bc_no_unknown, compute_dist(comm_no_unknown, method = "bray")),
+  tar_target(beta_jac_no_unknown, compute_dist(comm_no_unknown, method = "jaccard")),
+  tar_target(beta_delta_unknown,  beta_delta_summary(comm, comm_no_unknown)),
+  # Detection-rate ranking to auto-pick a pedagogical species
+  tar_target(det_detect_summary,
+    detection_rate_summary(det_histories$mat, det_histories$meta),
+    pattern = map(det_histories), iteration = "list"
+  ),
+  tar_target(det_detect_summary_all, bind_rows(det_detect_summary)),
+  tar_target(occ_species_auto, choose_occ_species(det_detect_summary_all)),
+
+  # Occupancy demo: auto-picked species, ψ ~ type, p ~ 1
+  tar_target(det_hist_occ,
+    detection_history_for_species(events_default, site, species = occ_species_auto, max_days = det_days_max)
+  ),
+  tar_target(umf_occ,      occu_build_umf(det_hist_occ$mat, det_hist_occ$meta)),
+  tar_target(occu_demo,    fit_simple_occu(umf_occ, with_type = TRUE)),
+  tar_target(tab_occu,     occu_demo$tidy),
+  tar_target(fig_occu,     occu_demo$fig),
+  # Inspection targets for occupancy stability
+  tar_target(occ_hist_long, detection_history_long(det_hist_occ$mat, det_hist_occ$meta)),
+  tar_target(occ_site_summary, summarise_occ_site(det_hist_occ$mat, det_hist_occ$meta))
 )

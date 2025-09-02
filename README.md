@@ -53,6 +53,17 @@ We quantify between-site turnover with both Bray–Curtis (abundance-sensitive) 
 
 Focal‑species GLMs model event counts with a log(trap_nights) offset. We select Poisson unless overdispersed (φ > 1.5), then prefer NB if it clearly improves AIC (≥ 2), otherwise use quasi‑Poisson for robust SEs. Numeric covariates are z‑scored so IRRs are “per +1 SD”. Partial‑dependence plots show expected rates per 100 trap‑nights, holding other covariates at z=0. Quasi CIs are Wald with dispersion‑inflated SEs. See `glm_diag_all`, `glm_irrs_all`, `fig_glm_coef`, and `fig_glm_pd_type`.
 
+### Detectability (daily histories, naïve ψ, occupancy demo)
+
+We surface imperfect detectability (p < 1) in three steps:
+
+- Daily detection histories per species (capped at 21 days) show when sites first record a species, faceted by habitat.
+- Naïve occupancy curves ψ̂(t) = proportion of sites detected by day t, by habitat, illustrate how ψ̂(t) rises with effort and can differ between wet vs dry.
+- Auto-picks a focal species by windowed detection rate (closest to 50% of sites detected within the window) to keep the demo pedagogical.
+- Demonstrator occupancy model (unmarked::occu, ψ ~ type, p ~ 1) reports ψ for wet/dry and the per‑day detection probability p.
+
+Assumptions: days without detections are treated as non‑detections; cameras are assumed operating continuously for their `op_days`. The occupancy demo is pedagogical (no observation covariates). We cap detection histories at 21 days by default.
+
 ## Rebuilding the pipeline (optional)
 
 ```r

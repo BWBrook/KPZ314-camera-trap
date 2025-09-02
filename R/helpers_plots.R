@@ -13,6 +13,7 @@ import::here(st_as_sf, st_transform, st_bbox, st_as_sfc, st_buffer, .from = "sf"
 import::here(local_seed, .from = "withr")
 import::here(cli_warn, .from = "cli")
 import::here(tibble, .from = "dplyr")
+import::here(melt, .from = "reshape2")
 
 # Heatmap of Bray–Curtis dissimilarity
 plot_turnover_heatmap <- function(dist_obj, meta_df) {
@@ -251,3 +252,8 @@ plot_site_map <- function(meta_df, buffer_m = 500L) {
                           name = "Type")
   }
 }
+
+# Detection history heatmap (wrapper retained for consistency)
+# Prefer using plot_detection_heatmap() defined in helpers_detectability.R.
+
+# psi curves plot helper (wrapper); the core implementation lives in helpers_detectability.R
