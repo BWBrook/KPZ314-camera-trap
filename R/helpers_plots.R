@@ -1,6 +1,6 @@
 # R/helpers_plots.R
 
-import::here(ggplot, aes, geom_tile, scale_fill_gradient, geom_point,
+import::here(ggplot, aes, geom_tile, scale_fill_gradient, scale_fill_gradient2, geom_point,
              geom_text, facet_wrap, theme_minimal, labs, coord_sf,
              scale_colour_manual, coord_quickmap, geom_sf, geom_polygon,
              guides, guide_none, geom_pointrange, scale_x_log10, geom_vline,
@@ -43,6 +43,51 @@ plot_turnover_heatmap <- function(dist_obj, meta_df) {
     labs(x = "Site", y = "Site")
 }
 
+# Co-occurrence heatmap of z-scores under independence
+plot_coocc_heatmap <- function(z_mat, extreme_thresh = 2, taxa_df = NULL, stats_tbl = NULL, n_low_thresh = 8L, z_limit = 3) {
+  if (is.null(dim(z_mat))) rlang::abort("plot_coocc_heatmap(): z_mat must be a matrix.")
+  mm <- as.matrix(z_mat)
+  df <- melt(mm, varnames = c("sp_i","sp_j"), value.name = "z")
+  # flag extremes
+  df$flag <- ifelse(is.finite(df$z) & abs(df$z) >= as.numeric(extreme_thresh), "•", "")
+  # Optional short labels from taxa
+  if (!is.null(taxa_df) && all(c("common","short") %in% names(taxa_df))) {
+    map <- setNames(as.character(taxa_df$short), as.character(taxa_df$common))
+    li <- map[as.character(df$sp_i)]; lj <- map[as.character(df$sp_j)]
+    df$lab_i <- ifelse(is.na(li), as.character(df$sp_i), li)
+    df$lab_j <- ifelse(is.na(lj), as.character(df$sp_j), lj)
+  } else {
+    df$lab_i <- as.character(df$sp_i)
+    df$lab_j <- as.character(df$sp_j)
+  }
+  p <- ggplot(df, aes(x = lab_i, y = lab_j, fill = z)) +
+    geom_tile() +
+    geom_text(aes(label = flag), colour = "black", size = 4) +
+    scale_fill_gradient2(low = "steelblue3", mid = "white", high = "firebrick3", midpoint = 0, limits = c(-abs(z_limit), abs(z_limit)), na.value = "grey95", name = "z") +
+    theme_minimal() +
+    labs(title = "Co-occurrence residuals (fixed margins)", x = NULL, y = NULL,
+         caption = "Standardised residuals under independence (fixed margins). Flagged cells (|z| ≥ 2) are hypotheses, not proof of interaction.") +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1))
+  # Overlay low-N indicator if stats provided
+  if (!is.null(stats_tbl) && all(c("sp_i","sp_j","N") %in% names(stats_tbl))) {
+    dd <- stats_tbl[, c("sp_i","sp_j","N"), drop = FALSE]
+    # map labels
+    if (!is.null(taxa_df) && all(c("common","short") %in% names(taxa_df))) {
+      map <- setNames(as.character(taxa_df$short), as.character(taxa_df$common))
+      dd$lab_i <- ifelse(is.na(map[as.character(dd$sp_i)]), as.character(dd$sp_i), map[as.character(dd$sp_i)])
+      dd$lab_j <- ifelse(is.na(map[as.character(dd$sp_j)]), as.character(dd$sp_j), map[as.character(dd$sp_j)])
+    } else {
+      dd$lab_i <- as.character(dd$sp_i); dd$lab_j <- as.character(dd$sp_j)
+    }
+    dd$lowN <- dd$N < as.integer(n_low_thresh)
+    if (any(dd$lowN)) {
+      p <- p + ggplot2::geom_text(data = dd[dd$lowN, , drop = FALSE], ggplot2::aes(x = lab_i, y = lab_j), label = "n", colour = "grey10", size = 3)
+      p <- p + labs(caption = paste0("Standardised residuals under independence (fixed margins). Flagged cells (|z| ≥ 2) are hypotheses, not proof of interaction. 'n' marks pairs with N < ", n_low_thresh, "."))
+    }
+  }
+  p
+}
+
 # General heatmap by within-group facets (works for any distance)
 plot_heat_by_group <- function(dist_obj, meta_df, group_col = "type") {
   mat <- as.matrix(dist_obj)
@@ -70,6 +115,7 @@ plot_heat_by_group <- function(dist_obj, meta_df, group_col = "type") {
   if (!("site" %in% names(meta_df))) rlang::abort("plot_heat_by_group(): meta_df must contain 'site'.")
   if (!(group_col %in% names(meta_df))) rlang::abort(sprintf("plot_heat_by_group(): meta_df must contain '%s'.", group_col))
   meta_small <- meta_df[, c("site", group_col)]
+  meta_small <- unique(meta_small)
   names(meta_small) <- c("site", "group")
 
   mlt <- left_join(mlt, meta_small, by = c("site1" = "site")) |>

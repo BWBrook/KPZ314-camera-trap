@@ -10,7 +10,8 @@ targets::tar_config_set(script = "_targets.R")
 targets::tar_source("R")
 
 # auto‑build if the cache is empty
-if (!targets::tar_exist_objects(names = "raw")) {
+inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
+if (!inside_targets && !targets::tar_exist_objects(names = "raw")) {
   message("Building targets (~3‑5 min on fresh clone)…")
   targets::tar_make()
 }
@@ -21,10 +22,11 @@ needed <- c(
   "tab_occu","fig_occu",
   "alpha_delta_unknown_tbl","beta_delta_unknown"
 )
-missing <- needed[!targets::tar_exist_objects(names = needed)]
-if (length(missing)) {
-  message("Building missing targets: ", paste(missing, collapse = ", "))
-  targets::tar_make(names = missing)
+exist_needed <- targets::tar_exist_objects(names = needed)
+to_build_needed <- needed[!exist_needed]
+if (!inside_targets && length(to_build_needed)) {
+  message("Building missing targets: ", paste(to_build_needed, collapse = ", "))
+  targets::tar_make(names = to_build_needed)
 }
 
 raw            <- targets::tar_read(raw)
@@ -222,8 +224,12 @@ fig_heat_jac
 cat(turnover_caption())
 ```
 
-```{r}
+```{r, eval = !knitr::is_latex_output()}
 plotly::ggplotly(fig_nmds)
+```
+
+```{r, eval = knitr::is_latex_output()}
+fig_nmds
 ```
 
 ```{r}
@@ -368,7 +374,8 @@ Note: We fit ψ ~ type, p ~ 1. If habitat groups are nearly separated or detecti
 We auto-pick a “pedagogical” species by choosing the one whose windowed detection rate is closest to 50% of sites (ideally within 20–80%). This yields enough 0s and 1s across sites for stable estimation and clear contrasts.
 
 ```{r}
-if (!targets::tar_exist_objects(names = "det_detect_summary_all")) {
+inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
+if (!targets::tar_exist_objects(names = "det_detect_summary_all") && !inside_targets) {
   targets::tar_make(names = c("det_histories","det_detect_summary","det_detect_summary_all"))
 }
 
@@ -389,11 +396,15 @@ knitr::kable(rank_tbl, caption = "Species ranked by windowed detection rate clos
 ### 6.4 Sensitivity: excluding ‘unknown_animal’
 
 ```{r}
-if (!targets::tar_exist_objects(names = "alpha_delta_unknown_tbl")) {
+inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
+if (!targets::tar_exist_objects(names = "alpha_delta_unknown_tbl") && !inside_targets) {
   targets::tar_make(names = "alpha_delta_unknown_tbl")
 }
-knitr::kable(targets::tar_read(alpha_delta_unknown_tbl),
-             caption = "Alpha metric deltas (no 'unknown_animal' minus all)")
+adu <- targets::tar_read(alpha_delta_unknown_tbl)
+ex_sites <- intersect(unique(adu$site), c("Dry_09","Wet_09"))
+show_tbl <- if (length(ex_sites)) dplyr::filter(adu, site %in% ex_sites) else utils::head(adu, 10)
+knitr::kable(show_tbl,
+             caption = "Alpha metric deltas (no 'unknown_animal' minus all) — subset for illustration")
 ```
 
 ```{r}
@@ -412,10 +423,72 @@ knitr::kable(sens, caption = "Unknown-animal sensitivity: mean |Δ| and Pearson 
 
 ---
 
+## 7. Inter‑specific structure (caution: correlation ≠ interaction)
+
+Co‑occurrence and activity patterns can suggest structure but do not prove causal interactions. Shared habitat or shared diel activity can generate apparent associations. Use these diagnostics to form hypotheses and propose falsification tests.
+
+### 7.1 Co‑occurrence under independence
+
+```{r}
+needed_coocc <- c("pa_mat","coocc_species","coocc_stats_all","coocc_z_all","fig_coocc_heat")
+exist_coocc <- targets::tar_exist_objects(names = needed_coocc)
+to_build_coocc <- needed_coocc[!exist_coocc]
+inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
+if (!inside_targets && length(to_build_coocc)) {
+  targets::tar_make(names = to_build_coocc)
+}
+targets::tar_read(fig_coocc_heat)
+```
+
+```{r}
+# Optional by-habitat view (may be sparse)
+inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
+if (!targets::tar_exist_objects(names = "fig_coocc_heat_by_type") && !inside_targets) {
+  targets::tar_make(names = c("coocc_stats_by_type","coocc_z_by_type","fig_coocc_heat_by_type"))
+}
+targets::tar_read(fig_coocc_heat_by_type)
+```
+
+> TASK 7.1 Pick one high |z| cell. Propose a plausible mechanism AND a falsification path (e.g., test within habitats, add covariates, examine time‑of‑day). Show whether the pair remains extreme within wet/dry; if it vanishes, attribute it to shared habitat.
+
+> 🔴 High |z| or high Δ̂ suggests a hypothesis; shared habitat or shared hours are rival explanations. Falsification: test within habitats and/or add covariates.
+
+### 7.2 Diel‑activity overlap (Δ̂) by habitat
+
+```{r}
+needed_ov <- c("overlap_pairs","overlap_tables","overlap_summary","fig_overlap_pairs")
+exist_ov <- targets::tar_exist_objects(names = needed_ov)
+to_build_ov <- needed_ov[!exist_ov]
+inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
+if (!inside_targets && length(to_build_ov)) {
+  targets::tar_make(names = to_build_ov)
+}
+over_summ <- targets::tar_read(overlap_summary)
+knitr::kable(over_summ, caption = "Activity overlap Δ̂ with 95% CIs by habitat and species pair (seed echoed)")
+```
+
+```{r}
+plots <- targets::tar_read(fig_overlap_pairs)
+for (p in plots) print(p)
+```
+
+> TASK 7.2 Does Δ̂ differ by habitat for either pair? Suggest an ecological driver; how would you falsify it?
+
+> ⚠️ Co‑occurrence ≠ interaction; high |z| or high Δ̂ can arise from shared habitat or activity windows.
+
+> ⚠️ Bootstraps for Δ̂ are over events, not sites; true site-level uncertainty would require site-resampling.
+
+---
+
 ### 4.3  Species spotlight
 
 ```{r}
 fig_sp_trends
+```
+
+```{r}
+# Improve readability of site labels in the spotlight plot
+fig_sp_trends + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
 > **TASK 4.3** Which habitat records more possum events? Suggest one ecological driver (≤ 40 words).
@@ -429,7 +502,7 @@ fig_sp_trends
 ```{r}
 # Example structure view (joined alpha + site metadata)
 alpha_site <- dplyr::left_join(alpha, site, by = "site")
-utils::str(alpha_site)
+utils::str(alpha_site[1:21, ])
 ```
 
 > **TASK 5.1** If larger‑bodied taxa are more detectable, what pattern would you expect in the alpha metrics? Test it with a quick plot or summary, and comment (≤ 50 words).

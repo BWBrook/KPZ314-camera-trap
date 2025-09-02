@@ -8,6 +8,7 @@ import::from("tidyr",     pivot_wider, pivot_longer)
 import::from("vegan",     vegdist)
 import::from("ggplot2",   ggplot, aes, geom_col, scale_colour_manual)
 import::from("tibble",    tibble)
+ 
 
 tar_source("R") # load custom functions
 tar_option_set(seed = 1L)
@@ -92,7 +93,8 @@ list(
         dat <- left_join(dat, site[, c("site", "type")], by = "site")
         ggplot(dat, aes(site, value, fill = name)) +
           geom_col(position = "dodge") +
-          ggplot2::facet_wrap(~ type, ncol = 1)
+          ggplot2::facet_wrap(~ type, ncol = 1) +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1))
       })
 
   ,
@@ -174,4 +176,68 @@ list(
   # Inspection targets for occupancy stability
   tar_target(occ_hist_long, detection_history_long(det_hist_occ$mat, det_hist_occ$meta)),
   tar_target(occ_site_summary, summarise_occ_site(det_hist_occ$mat, det_hist_occ$meta))
+  ,
+  # Inter-specific structure: co-occurrence under independence and diel overlap
+  tar_target(pa_mat,               pa_from_comm(comm)),
+  tar_target(coocc_species,        select_coocc_species(pa_mat, include = focal_species, k_max = 16L, min_sites = 4L)),
+  tar_target(coocc_stats_all,      coocc_pair_stats(pa_mat[, coocc_species, drop = FALSE])),
+  tar_target(coocc_z_all,          coocc_z_matrix(coocc_stats_all, group = "all")),
+  tar_target(fig_coocc_heat,       plot_coocc_heatmap(coocc_z_all, extreme_thresh = 2, taxa_df = taxa, stats_tbl = coocc_stats_all, n_low_thresh = 8L, z_limit = 3)),
+  tar_target(coocc_stats_by_type,  coocc_pair_stats(pa_mat[, coocc_species, drop = FALSE], meta_df = site, group_col = "type")),
+  tar_target(coocc_z_by_type,      {
+      if (nrow(coocc_stats_by_type) == 0) list() else coocc_z_by_group(coocc_stats_by_type)
+    }
+  ),
+  tar_target(fig_coocc_heat_by_type, {
+      lst <- coocc_z_by_type
+      if (!length(lst)) return(ggplot2::ggplot() + ggplot2::theme_void())
+      # Intersect species across groups to keep a consistent order
+      sp_sets <- lapply(lst, function(m) rownames(as.matrix(m)))
+      inter <- Reduce(intersect, sp_sets)
+      dropped <- lapply(names(lst), function(g) setdiff(sp_sets[[g]], inter))
+      names(dropped) <- names(lst)
+      # melt each matrix with group label and facet, restricted to intersection
+      df_list <- lapply(names(lst), function(g) {
+        mm <- as.matrix(lst[[g]])
+        keep <- intersect(rownames(mm), inter)
+        mm <- mm[keep, keep, drop = FALSE]
+        dd <- reshape2::melt(mm, varnames = c("sp_i","sp_j"), value.name = "z")
+        dd$type <- g; dd
+      })
+      d <- dplyr::bind_rows(df_list)
+      # Short labels if available
+      if (all(c("common","short") %in% names(taxa))) {
+        map <- stats::setNames(as.character(taxa$short), as.character(taxa$common))
+        li <- map[as.character(d$sp_i)]; lj <- map[as.character(d$sp_j)]
+        d$lab_i <- ifelse(is.na(li), as.character(d$sp_i), li)
+        d$lab_j <- ifelse(is.na(lj), as.character(d$sp_j), lj)
+      } else {
+        d$lab_i <- as.character(d$sp_i); d$lab_j <- as.character(d$sp_j)
+      }
+      p <- ggplot2::ggplot(d, ggplot2::aes(lab_i, lab_j, fill = z)) +
+        ggplot2::geom_tile() +
+        ggplot2::scale_fill_gradient2(low = "steelblue3", mid = "white", high = "firebrick3", midpoint = 0, limits = c(-3,3), na.value = "grey95", name = "z") +
+        ggplot2::facet_wrap(~ type, ncol = 2) +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(title = "Co-occurrence residuals by habitat", x = NULL, y = NULL) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1))
+      # add caption note if species dropped
+      dropped_all <- unique(unlist(dropped))
+      if (length(dropped_all)) {
+        msg <- paste0("Dropped species not present in all habitats: ", paste(sort(dropped_all), collapse = ", "))
+        p <- p + ggplot2::labs(caption = msg)
+      }
+      p
+    }
+  ),
+  # Activity overlap pairs and plots
+  tar_target(overlap_pairs, list(
+      c("long_nosed_potoroo","cat"),
+      c("brushtail_possum","bennetts_wallaby")
+    )),
+  tar_target(overlap_tables, overlap_by_pair(joined, pair = overlap_pairs, groups = c("wet","dry"), n_boot = 500L, seed = 1L),
+             pattern = map(overlap_pairs), iteration = "list"),
+  tar_target(overlap_summary, dplyr::bind_rows(overlap_tables)),
+  tar_target(fig_overlap_pairs, plot_activity_overlap(joined, pair = overlap_pairs, groups = c("wet","dry")),
+             pattern = map(overlap_pairs), iteration = "list")
 )

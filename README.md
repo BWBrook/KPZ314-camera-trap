@@ -64,6 +64,13 @@ We surface imperfect detectability (p < 1) in three steps:
 
 Assumptions: days without detections are treated as non‑detections; cameras are assumed operating continuously for their `op_days`. The occupancy demo is pedagogical (no observation covariates). We cap detection histories at 21 days by default.
 
+### Inter‑specific structure (diagnostics)
+
+- Co‑occurrence: fixed‑margins independence residuals (hypergeometric), visualised as a z‑score heatmap. High |z| highlights hypotheses, not proof of interaction; check within habitats.
+- Diel activity overlap: Δ̂ (Ridout & Linkie) with bootstrap 95% CIs, contrasted by habitat. Estimator rule: Δ4 for n ≥ 75 per species, else Δ1.
+- Practicum prompts mechanism + falsification (e.g., within‑habitat tests, covariates, activity windows).
+ - Note: Δ̂ bootstraps are over events, not sites; true site-level uncertainty would resample sites.
+
 ## Rebuilding the pipeline (optional)
 
 ```r

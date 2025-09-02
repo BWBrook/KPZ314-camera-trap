@@ -7,6 +7,10 @@ project_dependencies <- function() {
     # GLM NB
     "MASS",
     # occupancy demo
-    "unmarked"
+    "unmarked",
+    # activity overlap
+    "overlap","circular",
+    # rendering
+    "quarto"
   )
 }
