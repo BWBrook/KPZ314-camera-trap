@@ -1,377 +1,317 @@
 ---
-title: "KPZ314 Camera-trap Practical"
+title: "KPZ314 Camera‑trap Practical"
 format: html
 execute:
   echo: true
+  warning: false
 ---
 
 ```{r setup, include=FALSE}
-targets::tar_config_set(script = "_targets.R")
-targets::tar_source("R")
+# Keep the pipeline behaviour the same as the original practicum
+library(targets)
+tar_config_set(script = "_targets.R")
 
-# auto‑build if the cache is empty
-inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
-if (!inside_targets && !targets::tar_exist_objects(names = "raw")) {
-  message("Building targets (~3‑5 min on fresh clone)…")
-  targets::tar_make()
+# Auto‑build if the cache is empty
+if (!tar_exist_objects(names = "raw")) {
+  message("Building targets (~3–5 min on fresh clone)…")
+  tar_make()
 }
 
-# Build any missing targets needed for detectability/sensitivity sections
+# Build selected dynamic targets if missing (so tar_read() won't fail on branches)
 needed <- c(
-  "psi_curves_all","fig_psi_curves","fig_det_heat",
+  "fig_glm_coef","fig_glm_pd_type",
+  "fig_det_heat","psi_curves_all","fig_psi_curves",
   "tab_occu","fig_occu",
-  "alpha_delta_unknown_tbl","beta_delta_unknown"
+  "alpha_delta_unknown_tbl","beta_delta_unknown",
+  "fig_coocc_heat","fig_coocc_heat_by_type","overlap_summary","fig_overlap_pairs"
 )
-exist_needed <- targets::tar_exist_objects(names = needed)
-to_build_needed <- needed[!exist_needed]
-if (!inside_targets && length(to_build_needed)) {
-  message("Building missing targets: ", paste(to_build_needed, collapse = ", "))
-  targets::tar_make(names = to_build_needed)
+need_missing <- needed[!tar_exist_objects(names = needed)]
+if (length(need_missing)) {
+  message("Building missing dynamic targets: ", paste(need_missing, collapse = ", "))
+  tar_make(names = need_missing)
 }
 
-raw            <- targets::tar_read(raw)
-site           <- targets::tar_read(site)
-taxa           <- targets::tar_read(taxa)
-alpha          <- targets::tar_read(alpha)
-comm           <- targets::tar_read(comm)
-beta_bc        <- targets::tar_read(beta_bc)
-beta_jac       <- targets::tar_read(beta_jac)
-fig_heat       <- targets::tar_read(fig_heat)
-fig_heat_bc    <- targets::tar_read(fig_heat_bc)
-fig_heat_jac   <- targets::tar_read(fig_heat_jac)
-fig_nmds       <- targets::tar_read(fig_nmds)
-fig_nmds_jac   <- targets::tar_read(fig_nmds_jac)
-nmds_stats     <- targets::tar_read(nmds_stats)
-fig_site_map   <- targets::tar_read(fig_site_map)
-fig_gap        <- targets::tar_read(fig_gap)
-gamma_all      <- targets::tar_read(gamma_all)
-gamma_region   <- targets::tar_read(gamma_region)
-rare_region    <- targets::tar_read(rare_region)
-rare_raw       <- targets::tar_read(rare_raw)
-beta_permanova <- targets::tar_read(beta_permanova)
-fig_sp_trends  <- targets::tar_read(fig_sp_trends)
-rai            <- targets::tar_read(rai)
-tab_effort     <- targets::tar_read(tab_effort)
-alpha_ci       <- targets::tar_read(alpha_ci)
-gamma_by_habitat <- targets::tar_read(gamma_by_habitat)
-gamma_all_ci     <- targets::tar_read(gamma_all_ci)
+# Load canonical targets used throughout the workbook
+raw              <- tar_read(raw)
+site             <- tar_read(site)
+taxa             <- tar_read(taxa)
+alpha            <- tar_read(alpha)
+alpha_ci         <- tar_read(alpha_ci)
+comm             <- tar_read(comm)
+beta_bc          <- tar_read(beta_bc)
+beta_jac         <- tar_read(beta_jac)
+fig_site_map     <- tar_read(fig_site_map)
+fig_sp_trends    <- tar_read(fig_sp_trends)
+fig_heat         <- if (tar_exist_objects("fig_heat")) tar_read(fig_heat) else tar_read(fig_heat_bc)
+fig_heat_jac     <- tar_read(fig_heat_jac)
+fig_nmds         <- tar_read(fig_nmds)
+fig_nmds_jac     <- tar_read(fig_nmds_jac)
+nmds_stats       <- tar_read(nmds_stats)
+gamma_all        <- tar_read(gamma_all)
+gamma_region     <- tar_read(gamma_region)
+gamma_by_habitat <- tar_read(gamma_by_habitat)
+gamma_all_ci     <- tar_read(gamma_all_ci)
+rare_region      <- tar_read(rare_region)
+rare_raw         <- tar_read(rare_raw)
+gap_sensitivity  <- tar_read(gap_sensitivity)
+fig_gap          <- tar_read(fig_gap)
+tab_effort       <- tar_read(tab_effort)
+rai              <- tar_read(rai)
+beta_permanova   <- tar_read(beta_permanova)
+beta_r2_delta    <- tar_read(beta_r2_delta)
 
-# GLM module objects
-glm_diag_all     <- targets::tar_read(glm_diag_all)
-glm_irrs_all     <- targets::tar_read(glm_irrs_all)
-fig_glm_coef     <- targets::tar_read(fig_glm_coef)
-fig_glm_pd_type  <- targets::tar_read(fig_glm_pd_type)
+# GLMs
+glm_diag_all     <- tar_read(glm_diag_all)
+glm_irrs_all     <- tar_read(glm_irrs_all)
+fig_glm_coef     <- tar_read(fig_glm_coef)
+fig_glm_pd_type  <- tar_read(fig_glm_pd_type)
+
+# Detectability
+fig_det_heat     <- tar_read(fig_det_heat)
+psi_curves_all   <- tar_read(psi_curves_all)
+fig_psi_curves   <- tar_read(fig_psi_curves)
+det_days_max     <- tar_read(det_days_max)
+tab_occu         <- tar_read(tab_occu)
+fig_occu         <- tar_read(fig_occu)
+
+# Unknown-animal sensitivity
+alpha_delta_unknown <- tar_read(alpha_delta_unknown_tbl)
+beta_delta_unknown  <- tar_read(beta_delta_unknown)
+
+# Inter‑specific structure
+fig_coocc_heat        <- tar_read(fig_coocc_heat)
+fig_coocc_heat_by_type<- tar_read(fig_coocc_heat_by_type)
+overlap_summary       <- tar_read(overlap_summary)
+fig_overlap_pairs     <- tar_read(fig_overlap_pairs)
+
+# Species spotlight from earlier sections (optional)
+fig_sp_trends    <- tar_read(fig_sp_trends)
 ```
 
-## 1. Orientation
+## 0. How to use this workbook
 
-**Look at the raw, expert‑checked data table.**
+This practical workbook for camera-trap analysis provides context, interpretation guides, and short tasks to help you learn **why** each method is used and **how** to read its outputs. Every section has:
+
+- *Context*: the ecological question we’re probing.
+- *What you see*: which targets/figures are shown and how to read them.
+- *Checklist*: a few rules of thumb to avoid classic mistakes.
+- *Tasks*: short, pointed prompts (≤ 40–50 words each).
+
+> **Assessment alignment**  
+> The prompts mirror the Field Project Report criteria: justification, methods, results, interpretation, and limits.
+
+---
+
+## 1. Orientation — what counts as “data”?
+
+**Context.** Camera traps collect *bursty* images triggered by motion. To analyse communities rather than pixels, we reduce images to **independent events** with timestamps and species IDs.
 
 ```{r}
 dplyr::glimpse(raw)
 ```
 
-> **TASK 1.0** Think about why the data are encoded in this way.
+::: callout-note
+**What you see.** Columns: `site`, `common`, `datetime`, `event` (independent event ID), plus file and count.  
+**Why this matters.** Everything downstream: diversity, turnover, models, assumes we’re counting **events**, not frames.
+:::
 
-### 1.1 Map of camera sites
+**TASK 1.0** Explain why events (not images) are the unit of analysis for community ecology.
 
 ```{r}
 fig_site_map
 ```
 
-> **TASK 1.1** The sites are clearly separated spatially. Is this the only relevant difference?
+**TASK 1.1** The sites are geographically separated. Name two *non‑spatial* reasons communities could still differ between sites.
 
 ---
 
-## 2. Independent events and effort
+## 2. Independent events & effort — choosing a sensible gap
 
-We treat “independent events” as detections separated by at least a configurable gap. Below, explore how site‑level metrics change across gap values (1, 5, 10, 30 minutes).
+**Context.** A wallaby lingering in front of a camera can fire multiple images. We enforce a **gap** (minutes) so within‑bout triggers are merged into one event. But too large a gap discards information.
 
 ```{r}
 fig_gap
 ```
 
-Sampling effort affects interpretation, so we compute RAIs per 100 trap‑nights and provide the effort manifest for transparency.
+::: callout-note
+**What you see.** Each line is a site; panels show how **RAI** (events/100 trap‑nights), **richness**, and **total events** change as the gap increases (1, 5, 10, 30 min).
+- Sharp drop from 1→5 min ⇒ many within‑bout retriggers.
+- Flat richness ⇒ events change, **presence** does not.
+- So we Choose the **smallest stable** gap (usually 5–10 min).
+:::
+
+**Effort transparency.** We report effort as **trap‑nights** and RAIs.
 
 ```{r}
 tab_effort
-```
-
-```{r}
 head(rai, 8)
 ```
 
-> **TASK 2.1** Pick a gap that balances independence and sample size for this fauna. Justify briefly (≤ 40 words).
-
-```{r}
-# Any sites with zero total events (dropped from turnover distances)
-comm_mat <- targets::tar_read(comm)
-zero_sites <- names(which(rowSums(comm_mat) == 0))
-if (length(zero_sites)) {
-  cat("Note: Dropped zero-event sites from turnover distances: ", paste(zero_sites, collapse = ", "), "\n")
-}
-```
+**TASK 2.1** Justify why we pragmatically selected 5 min as the gap, using the panel figure.  
 
 ---
 
-## 3. Site‑level diversity
+## 3. Diversity with uncertainty — α, γ and sufficiency
 
-**Inspect alpha‑diversity metrics for all sites.**
+**Context.** Species richness treats all species equally. **Hill numbers** unify richness and evenness:
+- q=0: richness;
+- q=1: effective species from Shannon (exp *H*);
+- q=2: inverse Simpson (dominance‑sensitive).
 
 ```{r}
-# Offset counts by excluding ubiquitous 'unknown' class: subtract 1
-alpha_adj <- dplyr::mutate(alpha,
-  richness = pmax(richness - 1, 0),
-  chao1    = pmax(chao1 - 1, 0)
+# Boxplots (counts vs entropy-like metrics)
+alpha_long_counts <- tidyr::pivot_longer(dplyr::select(alpha, site, richness, chao1), -site,
+                                         names_to = "metric", values_to = "value")
+alpha_long_entropy <- tidyr::pivot_longer(dplyr::select(alpha, site, pielou, shannon, simpson), -site,
+                                          names_to = "metric", values_to = "value")
+par(mfrow = c(1,2))
+print(ggplot2::ggplot(alpha_long_counts, ggplot2::aes(metric, value)) + ggplot2::geom_boxplot())
+print(ggplot2::ggplot(alpha_long_entropy, ggplot2::aes(metric, value)) + ggplot2::geom_boxplot())
+par(mfrow = c(1,1))
+```
+
+```{r}
+if (!is.null(alpha_ci)) knitr::kable(utils::head(alpha_ci, 12),
+  caption = "Alpha diversity (Hill) with percentile bootstrap 95% CIs (first 12 rows)"
 )
-
-# Panel 1: abundance-like metrics (counts)
-alpha_long_counts <- tidyr::pivot_longer(
-  dplyr::select(alpha_adj, site, richness, chao1),
-  -site, names_to = "metric", values_to = "value"
-)
-
-ggplot2::ggplot(alpha_long_counts, ggplot2::aes(x = metric, y = value)) +
-  ggplot2::geom_boxplot()
 ```
 
-```{r}
-# Panel 2: entropy/evenness metrics
-alpha_long_entropy <- tidyr::pivot_longer(
-  dplyr::select(alpha_adj, site, pielou, shannon, simpson),
-  -site, names_to = "metric", values_to = "value"
-)
+::: callout-tip
+**Checklist.**
+- Divergence between q=0 and q=2 ⇒ **evenness** differences.
+- Report uncertainty: quote **point ± 95% CI**.
+- Do not compare sites on raw counts alone; use **RAIs** for rates.
+:::
 
-ggplot2::ggplot(alpha_long_entropy, ggplot2::aes(x = metric, y = value)) +
-  ggplot2::geom_boxplot()
-```
+**TASK 3.1** Choose one site with unusually high or low Shannon; suggest one ecological driver.
 
-Hill numbers provide a unified view of diversity: q=0 is richness, q=1 is the effective number of species from Shannon (exp[H]), and q=2 is the inverse Simpson (dominance‑sensitive).
-
-Note: q=0 counts species (richness), q=1 weights by common species, q=2 emphasises dominants; divergence between q=0 and q=2 signals evenness differences. In our tables, hill_q0 ≡ richness.
-
-```{r}
-# Bootstrap 95% CIs for Hill numbers and Pielou (per site)
-knitr::kable(head(alpha_ci, 12), caption = "Alpha diversity (Hill) with percentile bootstrap 95% CIs (first 12 rows)")
-```
-
-```{r}
-# Sites with zero events (excluded from alpha CI bootstrap)
- ev <- targets::tar_read(events_default)
- site_counts <- dplyr::count(ev, site, name = "events")
- zero_alpha <- setdiff(unique(ev$site), site_counts$site)
- if (length(zero_alpha)) {
-   cat("Note: Sites excluded from alpha bootstrap (zero events): ", paste(zero_alpha, collapse = ", "))
- }
-```
-
-> **TASK 3.1** Choose one site whose Shannon index is notably high or low. State an ecological hypothesis to explain the pattern (≤ 40 words).
-
-### 3.2  Total (γ) diversity
-
-```{r}
-# Subtract 1 to discount the 'unknown' species placeholder
-gamma_all_adj    <- gamma_all - 1L
-gamma_region_adj <- dplyr::mutate(gamma_region, gamma = gamma - 1L)
-
-gamma_all_adj     # scalar (adjusted)
-gamma_region_adj  # by type (adjusted)
-
-# Habitat-level gamma (Hill numbers) with 95% CIs
-knitr::kable(gamma_by_habitat, caption = "Habitat-level gamma diversity (Hill) with site-bootstrap 95% CIs")
-```
-
-Seeds: The pipeline sets a global seed via tar_option_set(seed = 1L); alpha and gamma bootstraps also pass seed = 1L for reproducibility.
-
-> Note: γ CIs are from site‑level resampling of pooled counts, reflecting among‑site heterogeneity rather than event noise.
-> **TASK 3.2** How much of the γ diversity is captured in wet vs dry sites? (≤ 30 words)
-
-### 3.3  Sampling sufficiency
+### 3.2 Total (γ) diversity and coverage
 
 ```{r}
 rare_raw
 ```
 
-> **TASK 3.3.1** Are some of the camera sites undersampled? (≤ 30 words)
+**TASK 3.2** Are some sites likely **undersampled**? Defend the claim.
 
 ```{r}
+if (!is.null(gamma_all_ci)) {
+  knitr::kable(gamma_by_habitat, caption = "Habitat‑level γ diversity (Hill) with site‑bootstrap 95% CIs")
+}
 rare_region
 ```
 
-Sampling sufficiency and coverage: the endpoints on each rarefaction curve show the observed richness and its estimated coverage (S_obs/Chao1). Closer to 1 implies better sampling completeness.
+::: callout-note
+**What you see.** Habitat curves with **coverage** at the endpoint (S_obs/Chao1). Values near 1 mean sampling is close to asymptote.
+:::
 
-> **TASK 3.3.2** Do the wet and dry curves suggest similar sampling completeness across habitats? Explain in ≤ 40 words.
-
-> **TASK 3.3.3** Report the coverage values at the endpoints for wet vs dry. Which habitat is closer to asymptote?
+**TASK 3.3** Are the wet and dry habitats close to asymptote?  
 
 ---
 
-## 4. Community turnover
+## 4. Community turnover — composition vs dominance
 
-Bray–Curtis (abundance) and Jaccard (presence–absence) emphasise different aspects of community turnover. Report results for both: abundance patterns (dominance) vs composition (which species are present).
-
-### 4.1  Within-habitat dissimilarities and community structure
+**Context.** Communities differ by which species occur (**composition**) and by how abundant they are (**dominance**). We therefore use **Jaccard** (presence–absence) and **Bray–Curtis** (abundance).
 
 ```{r}
-fig_heat_bc
+fig_heat_jac # Jaccard within‑habitat dissimilarities
 ```
 
 ```{r}
-fig_heat_jac
-```
-
-```{r}
-cat(turnover_caption())
-```
-
-```{r, eval = !knitr::is_latex_output()}
-plotly::ggplotly(fig_nmds)
-```
-
-```{r, eval = knitr::is_latex_output()}
 fig_nmds
+if (!is.null(fig_nmds_jac)) fig_nmds_jac
+if (!is.null(nmds_stats)) knitr::kable(nmds_stats, caption = "NMDS stress by distance (seed echoed)")
 ```
 
 ```{r}
-fig_nmds_jac
+knitr::kable(beta_permanova, caption = "PERMANOVA (location) and dispersion tests")
 ```
 
-```{r}
-knitr::kable(nmds_stats, caption = "NMDS fit statistics (stress) for each distance")
-```
+::: callout-note
+- Bray–Curtis (abundance-sensitive) highlights dominance shifts.  
+- Jaccard (presence–absence) emphasises composition regardless of counts.  
+:::
 
-> Note: If stress > 0.2, interpret NMDS geometry cautiously; high stress indicates a poor low‑dimensional fit.
+::: callout-tip
+**Interpretation checklist.**
+- Report **R²** (effect size) and **permutation p** for each metric.
+- If **dispersion p < 0.05**, groups differ in **spread**; location (centroid) separation is uncertain.
+- Stress > 0.2 ⇒ the NMDS geometry is unreliable; describe **relative group separation** only.
+:::
 
-Guidance:
-- If disp_p ≥ 0.05 and p_perm < 0.05: report location separation with R² and p; dispersion is homogeneous.
-- If disp_p < 0.05: “Groups differ in dispersion; R² mixes location and spread; check medians and NMDS cautiously.”
-- Metric choice: Jaccard asks “different species present?”; Bray–Curtis asks “different composition and/or dominance?”. Report both.
-
-
-> **TASK 4.1** Name two clusters of sites that appear compositionally similar. Suggest one abiotic driver that could explain the pattern (≤ 40 words).
-
-### 4.2  Are wet vs dry communities distinct (location) and equally dispersed?
-
-```{r}
-beta_permanova
-```
-
-Permutation seeds for Bray and Jaccard are matched (seed = 1) so p-value differences reflect the metric, not RNG.
-
-Report R² (effect size) and permutation p for each distance. If `dispersion p < 0.05`, then groups differ in spread; interpret R² as partly/mostly driven by dispersion rather than centroid separation (location).
-
-Hulls show convex envelopes, not variance. Use `disp_p` to assess spread differences.
-
-```{r}
-# Effect contrast: ΔR² = R²_bray − R²_jaccard
-targets::tar_read(beta_r2_delta)
-```
-
-```{r}
-# Optional quick sanity check: median within vs between distances
-wb_bray <- within_between_summary(beta_bc, site, "type")
-wb_jac  <- within_between_summary(beta_jac, site, "type")
-knitr::kable(dplyr::bind_rows(wb_bray, wb_jac), caption = "Median within- vs between-habitat distances")
-```
+**TASK 4.1** Name two site clusters that look compositionally similar; propose one abiotic driver.  
+**TASK 4.2** Are wet vs dry distinct? Report R² and p for **both** distances, and state the dispersion caveat if triggered.
 
 ---
 
-## 5. Habitat selection (effort‑offset GLMs)
+## 5. Habitat selection — effort‑offset GLMs
 
-We fit effort‑offset GLMs for five focal taxa with sensible family selection (Poisson ⇒ quasi/NB if overdispersed). Numeric covariates are z‑scored, so IRRs are per +1 SD. Models include a log(trap_nights) offset.
-
-```{r}
-knitr::kable(glm_diag_all, caption = "GLM diagnostics (family, dispersion, sites)")
-```
+**Context.** To compare use across habitats while controlling effort, we model **event counts** with a **log(trap‑nights)** offset. Numeric covariates are **z‑scored**; coefficients are **IRRs** (multiplicative effects).
 
 ```{r}
-knitr::kable(glm_irrs_all, caption = "Incidence Rate Ratios (IRR) with 95% Wald CIs (quasi uses dispersion‑inflated SEs)")
-```
-
-If the diagnostics table notes “type dropped … separation”, inference on wet vs dry failed for that species because all events occurred in one habitat. This is a common issue for rare taxa; we drop `type` and proceed with other covariates.
-
-```{r}
-# one forest plot per species
+if (!is.null(glm_diag_all)) knitr::kable(glm_diag_all, caption = "GLM diagnostics (family, dispersion, fit)")
+if (!is.null(glm_irrs_all)) knitr::kable(glm_irrs_all, caption = "Incidence‑rate ratios (IRR) with 95% CIs")
 for (p in fig_glm_coef) print(p)
+for (p in fig_glm_pd_type) print(p)   # per 100 trap‑nights
 ```
 
-```{r}
-# partial dependence for wet vs dry (rates per 100 trap‑nights)
-for (p in fig_glm_pd_type) print(p)
-```
+::: callout-note
+**Checklist.**
+- IRR > 1 ⇒ increase; IRR < 1 ⇒ decrease. For **type**, the IRR compares wet to dry (baseline).
+- Quasi‑Poisson CIs are **Wald** with dispersion‑inflated SEs; be cautious if sample sizes are small.
+- Report **per +1 SD** effects for numeric covariates.
+:::
 
-> TASK 5.1 Pick one species and interpret the `type` IRR (wet vs dry) with its 95% CI in ≤ 35 words.
->
-> TASK 5.2 Which habitat covariate has the strongest effect (IRR farthest from 1)? Interpret it per +1 SD in ≤ 35 words.
+**TASK 5.1** Pick one species and interpret the `type` IRR.  
+**TASK 5.2** Which covariate has the strongest effect (IRR farthest from 1)? Interpret per +1 SD.
 
 ---
 
-## 6. Imperfect detectability (occupancy)
+## 6. Imperfect detectability — p < 1
 
-Even when a species is present, we don’t always detect it on a given day (p < 1). Below, we build daily detection histories, show how naïve occupancy ψ̂(t) rises with effort and differs by habitat, and fit a simple occupancy model for a common focal species (bennetts_wallaby).
+**Context.** Even when a species is present, we don’t always detect it on a given day (p < 1).  We build **daily detection histories**, track **naïve occupancy** ψ̂(t) by habitat, and fit one simple occupancy model.
 
 ### 6.1 Daily detection histories
 
 ```{r}
 det_list <- targets::tar_read(fig_det_heat)
 
-# Prefer a mid-frequency species (brushtail_possum) if available
+# Prefer a mid-frequency species (brush_bronzewing)
 printed <- FALSE
 for (i in seq_along(det_list)) {
   sp <- attr(det_list[[i]], "species")
-  if (!is.null(sp) && sp == "brushtail_possum") { print(det_list[[i]]); printed <- TRUE; break }
+  if (!is.null(sp) && sp == "brush_bronzewing") { print(det_list[[i]]); printed <- TRUE; break }
 }
-if (!printed && length(det_list)) print(det_list[[1]])
-```
-
-> Assumptions: days without detections are treated as non-detections; cameras are assumed operating continuously for `op_days`. We cap detection histories at up to 21 days (or fewer if deployments were shorter).
-> Timezone: Days are computed in Hobart local time (Australia/Hobart) to avoid UTC/DST boundary surprises; only the calendar date is used when forming daily occasions.
-
-### 6.2 Naïve occupancy ψ̂(t) by habitat
-
-```{r}
-psi_all <- targets::tar_read(psi_curves_all)
-knitr::kable(dplyr::filter(psi_all, day %in% c(3,7,14)),
-             caption = "Naïve occupancy ψ̂(t) at days 3, 7, and 14 (by habitat)")
-```
-
-> Denominators: All sites contribute through day `det_days_max`; we cap curves at that window so denominators remain constant when comparing ψ̂(t) across days and habitats.
-
-```{r}
-det_days_max <- targets::tar_read(det_days_max)
-cat("Note: det_days_max =", det_days_max, "days\n")
 ```
 
 ```{r}
-figs <- targets::tar_read(fig_psi_curves)
-for (p in figs) print(p)
+if (length(fig_det_heat)) {
+  sp <- attr(fig_det_heat[[1]], "species")
+  print(fig_det_heat[[1]])
+}
+
+knitr::kable(dplyr::filter(psi_curves_all, day %in% c(3,7,14)),
+               caption = "Naïve occupancy ψ̂(t) at days 3, 7, 14 by habitat")
+
+if (!is.null(psi_curves_all)) {
+  for (p in fig_psi_curves) print(p)
+  cat("Note: curves are capped at det_days_max =", det_days_max, "days to keep denominators constant.\n")
+}
+
+knitr::kable(tab_occu, caption = "Occupancy demo for the Brush Bronzewing (ψ by habitat; p is per‑day detection probability)")
+
+if (!is.null(tab_occu)) {
+  print(fig_occu)
+}
 ```
 
-> TASK 6.1 For one species, how many days of effort are needed for ψ̂(t) to exceed 0.8 in wet vs dry sites?
+::: callout-warning
+**Guardrail.** If ψ̂\_wet ≠ ψ̂\_dry but **p** is low, extra days of effort can change naïve conclusions. State this explicitly.
+:::
 
-### 6.3 Occupancy demo (auto-picked species)
+**TASK 6.1** For this species (brush bronzewing), how many days are needed for ψ̂(t) ≥ 0.8 in wet vs dry?  
+**TASK 6.2** Report ψ̂ with 95% CI from the demo model and explain what **p** implies for survey effort.
 
-```{r}
-picked <- targets::tar_read(occ_species_auto)
-cat("Demo species:", picked, "\n")
-
-knitr::kable(targets::tar_read(tab_occu),
-             caption = "Occupancy demo (ψ by habitat; p is per-day detection probability)")
-```
-
-```{r}
-targets::tar_read(fig_occu)
-```
-
-> TASK 6.2 Report the overall ψ̂ with its 95% CI. What does the estimated per‑day detection probability p imply about required survey effort? (Use the ψ̂(t) curves by habitat for context.)
-
-Note: We fit ψ ~ type, p ~ 1. If habitat groups are nearly separated or detections are extremely sparse, the likelihood can become flat and the Hessian singular; predictions on the probability scale can still be interpreted cautiously. If instability arises, use the ψ̂(t) curves to discuss differences.
-
-> Guardrail: If ψ̂_wet ≠ ψ̂_dry but p is low, extra effort (more days) can change naïve conclusions. State this explicitly in your answer.
-
-#### 6.3a Species picker rationale
-
-We auto-pick a “pedagogical” species by choosing the one whose windowed detection rate is closest to 50% of sites (ideally within 20–80%). This yields enough 0s and 1s across sites for stable estimation and clear contrasts.
+**Note:** We picked a species by choosing the one whose detection rate is closest to 50% of sites (ideally within 20–80%). This yields enough 0s and 1s across sites for stable estimation and clear contrasts.  
 
 ```{r}
 inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
@@ -393,129 +333,75 @@ rank_tbl <- targets::tar_read(det_detect_summary_all) |>
 knitr::kable(rank_tbl, caption = "Species ranked by windowed detection rate closeness to 0.5 (lower is better)")
 ```
 
-### 6.4 Sensitivity: excluding ‘unknown_animal’
+---
+
+**Sensitivity to labels.** Excluding `unknown_animal`:
 
 ```{r}
-inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
-if (!targets::tar_exist_objects(names = "alpha_delta_unknown_tbl") && !inside_targets) {
-  targets::tar_make(names = "alpha_delta_unknown_tbl")
+if (!is.null(beta_delta_unknown)) {
+  knitr::kable(beta_delta_unknown,
+               caption = "Unknown‑class sensitivity: Bray/Jaccard mean |Δ| and Pearson r")
 }
-adu <- targets::tar_read(alpha_delta_unknown_tbl)
-ex_sites <- intersect(unique(adu$site), c("Dry_09","Wet_09"))
-show_tbl <- if (length(ex_sites)) dplyr::filter(adu, site %in% ex_sites) else utils::head(adu, 10)
-knitr::kable(show_tbl,
-             caption = "Alpha metric deltas (no 'unknown_animal' minus all) — subset for illustration")
 ```
-
-```{r}
-targets::tar_read(beta_delta_unknown)
-```
-
-```{r}
-# Small effect-size summary students can cite
-sens <- targets::tar_read(beta_delta_unknown)
-knitr::kable(sens, caption = "Unknown-animal sensitivity: mean |Δ| and Pearson r for Bray/Jaccard (upper triangle)")
-```
-
-> Interpretation hint: If r is near 1 and mean |Δ| is small, distances barely move when excluding ‘unknown_animal’. If r is lower and mean |Δ| is non-trivial, composition/dominance shifts materially.
-
-> TASK 6.3 Which metrics appear robust to excluding ‘unknown_animal’? Briefly justify.
 
 ---
 
-## 7. Inter‑specific structure (caution: correlation ≠ interaction)
+## 7. Inter‑specific structure — patterns, not proof
 
-Co‑occurrence and activity patterns can suggest structure but do not prove causal interactions. Shared habitat or shared diel activity can generate apparent associations. Use these diagnostics to form hypotheses and propose falsification tests.
-
-### 7.1 Co‑occurrence under independence
+**Context.** Co‑occurrence and activity overlaps can suggest structure (e.g., predator–prey avoidance) but also arise from **shared habitat** or **shared hours**.
 
 ```{r}
-needed_coocc <- c("pa_mat","coocc_species","coocc_stats_all","coocc_z_all","fig_coocc_heat")
-exist_coocc <- targets::tar_exist_objects(names = needed_coocc)
-to_build_coocc <- needed_coocc[!exist_coocc]
-inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
-if (!inside_targets && length(to_build_coocc)) {
-  targets::tar_make(names = to_build_coocc)
-}
-targets::tar_read(fig_coocc_heat)
+if (!is.null(fig_coocc_heat)) print(fig_coocc_heat)
+if (!is.null(fig_coocc_heat_by_type)) print(fig_coocc_heat_by_type)
+if (!is.null(overlap_summary)) knitr::kable(overlap_summary,
+  caption = "Diel activity overlap Δ̂ (95% CIs) by habitat and species pair")
+for (p in fig_overlap_pairs) print(p)
 ```
 
-```{r}
-# Optional by-habitat view (may be sparse)
-inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
-if (!targets::tar_exist_objects(names = "fig_coocc_heat_by_type") && !inside_targets) {
-  targets::tar_make(names = c("coocc_stats_by_type","coocc_z_by_type","fig_coocc_heat_by_type"))
-}
-targets::tar_read(fig_coocc_heat_by_type)
-```
+::: callout-danger
+🔴 High |z| or high Δ̂ **suggests a hypothesis** only. Falsify by showing the signal persists **within habitats**, or disappears when you restrict to **time windows** where the species are active.
+:::
 
-> TASK 7.1 Pick one high |z| cell. Propose a plausible mechanism AND a falsification path (e.g., test within habitats, add covariates, examine time‑of‑day). Show whether the pair remains extreme within wet/dry; if it vanishes, attribute it to shared habitat.
-
-> 🔴 High |z| or high Δ̂ suggests a hypothesis; shared habitat or shared hours are rival explanations. Falsification: test within habitats and/or add covariates.
-
-### 7.2 Diel‑activity overlap (Δ̂) by habitat
-
-```{r}
-needed_ov <- c("overlap_pairs","overlap_tables","overlap_summary","fig_overlap_pairs")
-exist_ov <- targets::tar_exist_objects(names = needed_ov)
-to_build_ov <- needed_ov[!exist_ov]
-inside_targets <- identical(Sys.getenv("TARGETS_RUNNING"), "1")
-if (!inside_targets && length(to_build_ov)) {
-  targets::tar_make(names = to_build_ov)
-}
-over_summ <- targets::tar_read(overlap_summary)
-knitr::kable(over_summ, caption = "Activity overlap Δ̂ with 95% CIs by habitat and species pair (seed echoed)")
-```
-
-```{r}
-plots <- targets::tar_read(fig_overlap_pairs)
-for (p in plots) print(p)
-```
-
-> TASK 7.2 Does Δ̂ differ by habitat for either pair? Suggest an ecological driver; how would you falsify it?
-
-> ⚠️ Co‑occurrence ≠ interaction; high |z| or high Δ̂ can arise from shared habitat or activity windows.
-
-> ⚠️ Bootstraps for Δ̂ are over events, not sites; true site-level uncertainty would require site-resampling.
+**TASK 7.1** Pick one high‑|z| cell: propose a mechanism **and** a falsification test.  
+**TASK 7.2** For one pair, does Δ̂ differ by habitat? Offer one ecological explanation and a refuter.
 
 ---
 
-### 4.3  Species spotlight
+## 8. Other things to try
+
+## 8.1 Species spotlight
 
 ```{r}
-fig_sp_trends
-```
-
-```{r}
-# Improve readability of site labels in the spotlight plot
 fig_sp_trends + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
-> **TASK 4.3** Which habitat records more possum events? Suggest one ecological driver (≤ 40 words).
+> **TASK 8.1** Which habitat records more possum events? Suggest one ecological driver.
 
 ---
 
-## 6. Trait exploration (stretch goal)
+### 8.2. Trait exploration (stretch goal)
 
 **Link alpha metrics to species traits (from the taxa table).**
 
 ```{r}
 # Example structure view (joined alpha + site metadata)
 alpha_site <- dplyr::left_join(alpha, site, by = "site")
-utils::str(alpha_site[1:21, ])
+utils::str(alpha_site[,1:21])
 ```
 
-> **TASK 5.1** If larger‑bodied taxa are more detectable, what pattern would you expect in the alpha metrics? Test it with a quick plot or summary, and comment (≤ 50 words).
+> **TASK 8.2** If larger‑bodied taxa are more detectable, what pattern would you expect in the alpha metrics? Test it with a quick plot or summary, and comment.
 
 ---
 
-## 7. Reflection
 
-> **TASK 6.1** In ≤ 50 words, reflect on one limitation or source of bias in using camera‑trap data for community‑level inference in Tasmanian fauna.
+## 9. Reflection (limits & ethics)
+
+**TASK 9.1** State one limitation of camera traps for community inference in Tasmanian forests and how you would mitigate it (design or analysis).  
+**TASK 9.2** Briefly note one ethical or welfare concern and how it is addressed in field protocols.
 
 ---
 
-## 8. Free Exploration
+## 10. Free exploration
 
 You can load any pipeline object into your R environment and explore it.
 
@@ -576,26 +462,10 @@ alpha_local
 
 **Or try anything else**: every object from the workflow is just a data frame or matrix you can inspect, plot, or save!
 
----
+Every object is a data frame, matrix, or plot. Use `tar_manifest()` to see available targets. 
 
-> **Bonus:** In the R console, run `tar_manifest()` to see all available pipeline objects, or use `ls()` to see what’s loaded into your workspace.
-
----
-
-## 9. Your Own Analysis
-
-Write a short script or chunk below where you try something new with the data—anything goes!
+Try building your own small analysis below.
 
 ```{r}
-
-# Your code here!
-
+# Your code here
 ```
-
----
-
-## 9. “In-console” play
-
-After knitting, you can open the R console, load the project, and call `tar_read()` for any target, or `source("R/helpers_metrics.R")` to get all helpers.
-
-For truly unchained analysis: create an `explore.R` or `scratch.Rmd` and go free-form!

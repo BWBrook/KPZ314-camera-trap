@@ -1,88 +1,84 @@
-# KPZ314 Camera-trap Practical
+# KPZ314 Camera‑trap Practical — Student Guide
 
-Hands-on lab for *Fauna of Tasmania* (KPZ314, Week 8).  
-Students use an expert-validated MEWC camera-trap table to derive site- and community-level metrics in R.
+Welcome to Week‑8. You’ll use an expert‑validated camera‑trap dataset to learn how ecologists turn images into **inference** about communities, habitats, and species.
 
-## Repo structure
+## What you will learn (outcomes)
 
-```
-/_targets.R           # hidden pipeline (pre-built in _targets/)
-R/                    # helper functions, one task each
-practicum.qmd         # the workbook you knit
-data/                 # master table + site + taxa
-_targets/             # small (~1 MB) cache of pre-made targets
+- Why we use **independent events** and how the event gap affects inference.  
+- How to compute and **interpret diversity** (α, β, γ) with **uncertainty**.  
+- How to read **turnover** plots and tests (Bray–Curtis vs Jaccard, NMDS, PERMANOVA, dispersion).  
+- How to fit **effort‑offset GLMs** and read **IRRs**.  
+- Why **detectability** matters (p < 1): detection histories, naïve ψ̂(t), simple occupancy.  
+- How to inspect **inter‑specific structure** (co‑occurrence residuals; activity overlap Δ̂) without claiming causation.
 
-````
+## Quick start
 
-## Quick-start (students)
-
-In RStudio, unzip the directory then:
 ```r
-renv::restore() # installs all R packages via renv
-quarto::quarto_render("practicum.qmd") # render the md and HTML
+renv::restore()                                # install packages for this project
+quarto::quarto_render("practicum.qmd")         # open the HTML and answer prompts
 ```
 
-Optional (faster installs):
+Alternatively, you can try the below, but the restore() approach is recommended:
+
 ```r
 source("dependencies.R")
 pak::pkg_install(project_dependencies())
 ```
 
-> Pipeline cache is pre-built; students do not run tar_make() unless they intentionally want to recompute.
+> The pipeline cache is pre‑built. Only run `targets::tar_make()` if the workbook tells you to recompute specific targets.
 
-### Independent events, effort, and RAI
+## Repo layout
 
-The pipeline parameterises “independent events” via a time gap and derives sampling effort and RAIs (events per 100 trap‑nights):
+```
+/_targets.R         # pipeline definition (pre‑built cache in _targets/)
+R/                  # helper functions (pure, unit‑tested)
+practicum.qmd       # this workbook
+data/               # observation table + site metadata + taxa
+```
 
-- Change the default gap in `_targets.R` by editing `events_default = build_events(raw, gap_min = 5L)`.
-- Effort is summarised from site metadata (`op_days` → `trap_nights`), and RAIs are computed as `100 * events / trap_nights`.
-- A gap‑sensitivity diagnostic (`fig_gap`) explores how metrics vary for gaps {1, 5, 10, 30} minutes.
+## Key concepts (glossary in one minute)
 
-### Diversity with uncertainty
+- **Event**: a detection separated by ≥ gap minutes from the previous detection of that species at that site.  
+- **RAI**: events per 100 trap‑nights (controls for exposure).  
+- **Hill numbers**: q=0 richness; q=1 exp(Shannon); q=2 inverse Simpson (dominance‑sensitive).  
+- **γ diversity**: total diversity of a region (here: habitat), with **coverage** = S_obs/Chao1 indicating completeness.  
+- **β turnover**: between‑site dissimilarity. **Jaccard** = composition; **Bray–Curtis** = composition + dominance.  
+- **PERMANOVA**: tests **location** (centroid) differences; pair with a **dispersion** test to avoid confounding.  
+- **IRR**: multiplicative change in event rate for a +1 unit (here **+1 SD**) change in a covariate; `typewet` compares wet to dry.  
+- **Detectability (p)**: probability of detecting a species when present on a survey day. ψ̂(t) rises with effort if p < 1.  
+- **Δ̂**: diel activity overlap (Ridout & Linkie), with bootstrap CIs.
 
-We report alpha diversity using Hill numbers (q = 0, 1, 2) with bootstrap CIs:
-- q0 = richness; q1 = exp(Shannon); q2 = inverse Simpson. See `alpha` (point estimates) and `alpha_ci` (CIs).
-- Habitat-level gamma with site-bootstrap CIs is available via `gamma_by_habitat`; overall gamma via `gamma_all_ci`.
-- Rarefaction plots annotate sampling coverage (S_obs/Chao1) at the observed endpoint, and include a wet vs dry overlay.
+## Troubleshooting (fast)
 
-### Community turnover (paired distances)
+| Symptom | Fix |
+| --- | --- |
+| `tar_read()` can’t find an object | `targets::tar_make()` once; then re‑render |
+| YAML error line 1–5 | Ensure the file starts with `---` and a valid header |
+| Package not found | `renv::restore()` then **restart R** |
+| Plotly not showing labels | Ignore; the static ggplot holds the same information |
 
-We quantify between-site turnover with both Bray–Curtis (abundance-sensitive) and Jaccard (presence–absence). Visuals: `fig_heat_bc`, `fig_heat_jac`, `fig_nmds` (Bray), and `fig_nmds_jac` (Jaccard), with NMDS fit stats in `nmds_stats`. Inference combines PERMANOVA (location; `R²`, `p_perm`) and a dispersion test (`disp_p`) in `beta_permanova`. If `disp_p < 0.05`, interpret the location effect cautiously.
+## Frequently used targets
 
-### Habitat use models (effort‑offset GLMs)
+- **Event & effort**: `fig_gap`, `tab_effort`, `rai`  
+- **Diversity**: `alpha`, `alpha_ci`, `gamma_all_ci`, `gamma_by_habitat`, `rare_raw`, `rare_region`  
+- **Turnover**: `beta_permanova`, `fig_heat`, `fig_heat_jac`, `fig_nmds`, `fig_nmds_jac`, `nmds_stats`  
+- **GLMs**: `glm_diag_all`, `glm_irrs_all`, `fig_glm_coef`, `fig_glm_pd_type`  
+- **Detectability**: `fig_det_heat`, `psi_curves_all`, `fig_psi_curves`, `tab_occu`  
+- **Inter‑specific**: `fig_coocc_heat`, `fig_coocc_heat_by_type`, `overlap_summary`, `fig_overlap_pairs`
 
-Focal‑species GLMs model event counts with a log(trap_nights) offset. We select Poisson unless overdispersed (φ > 1.5), then prefer NB if it clearly improves AIC (≥ 2), otherwise use quasi‑Poisson for robust SEs. Numeric covariates are z‑scored so IRRs are “per +1 SD”. Partial‑dependence plots show expected rates per 100 trap‑nights, holding other covariates at z=0. Quasi CIs are Wald with dispersion‑inflated SEs. See `glm_diag_all`, `glm_irrs_all`, `fig_glm_coef`, and `fig_glm_pd_type`.
+## Rules-of-thumb for interpretation
 
-### Detectability (daily histories, naïve ψ, occupancy demo)
+- Quote **effect size + uncertainty** (CIs or p) every time.  
+- Never claim causation from **co‑occurrence** or **overlap** alone—propose a falsification.  
+- If **dispersion p < 0.05**, say so before interpreting PERMANOVA R².  
+- If **p** is low, acknowledge that extra effort may change naïve ψ̂(t).
 
-We surface imperfect detectability (p < 1) in three steps:
-
-- Daily detection histories per species (capped at 21 days) show when sites first record a species, faceted by habitat.
-- Naïve occupancy curves ψ̂(t) = proportion of sites detected by day t, by habitat, illustrate how ψ̂(t) rises with effort and can differ between wet vs dry.
-- Auto-picks a focal species by windowed detection rate (closest to 50% of sites detected within the window) to keep the demo pedagogical.
-- Demonstrator occupancy model (unmarked::occu, ψ ~ type, p ~ 1) reports ψ for wet/dry and the per‑day detection probability p.
-
-Assumptions: days without detections are treated as non‑detections; cameras are assumed operating continuously for their `op_days`. The occupancy demo is pedagogical (no observation covariates). We cap detection histories at 21 days by default.
-
-### Inter‑specific structure (diagnostics)
-
-- Co‑occurrence: fixed‑margins independence residuals (hypergeometric), visualised as a z‑score heatmap. High |z| highlights hypotheses, not proof of interaction; check within habitats.
-- Diel activity overlap: Δ̂ (Ridout & Linkie) with bootstrap 95% CIs, contrasted by habitat. Estimator rule: Δ4 for n ≥ 75 per species, else Δ1.
-- Practicum prompts mechanism + falsification (e.g., within‑habitat tests, covariates, activity windows).
- - Note: Δ̂ bootstraps are over events, not sites; true site-level uncertainty would resample sites.
-
-## Rebuilding the pipeline (optional)
+## Rebuild (optional)
 
 ```r
 targets::tar_destroy(destroy = "objects")   # wipe old objects
-targets::tar_make()                         # 7–10 s on a laptop
+targets::tar_make()                         # rebuild everything
 ```
 
-## FAQ
-
-* **“tar_read can’t find objects”** – run `tar_make()` once or pull the latest commit with the `_targets/` folder.
-* **“YAML parse error”** – ensure the first five lines of `practicum.qmd` match exactly the README sample.
-* **“package not found”** – run `renv::restore()`.
-
-Maintainers: Barry Brook (`barry.brook@utas.edu.au`).
-License: CC-BY-SA 4.0.
+Maintainers: Barry W. Brook (barry.brook@utas.edu.au)  
+License: CC‑BY‑SA 4.0

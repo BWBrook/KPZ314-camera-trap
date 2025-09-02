@@ -1,43 +1,73 @@
-# Getting Started: KPZ314 Camera-trap Practical
+# Getting Started — KPZ314 Camera‑trap Practical (Revised)
 
-*5-minute checklist for Week-8 Prac.*
+**Goal:** get you from zero to a rendered workbook in **5 minutes**.
 
-1. **Open the project in RStudio**
-   `File → Open Project… → KPZ314-camera-trap.Rproj`
+## 1) Open the project in RStudio
+`File → Open Project… → KPZ314-camera-trap.Rproj`
 
-2. **Restore the renv**
+## 2) Restore the project libraries
+```r
+renv::restore()        # installs the exact package set for this project
+```
 
-   ```r
-   renv::restore()   # installs all R packages via renv
-   ```
+If installs are slow or failing, you can also try:
+```r
+source("dependencies.R")
+pak::pkg_install(project_dependencies())
+```
 
-3. **Render the workbook**
-   Click the **Render** button in the `practicum.qmd` tab.
-   The HTML will open automatically; answer the TASK prompts inline.
-   Alternatively, in the R console, type: `quarto::quarto_render("practicum.qmd")`
+## 3) Render the workbook
+Click **Render** in the `practicum.qmd` tab, or run:
+```r
+quarto::quarto_render("practicum.qmd")
+```
 
-**Troubleshooting**
+The HTML opens automatically.  
+Answer the **TASK** prompts inline or on separate notes (short, evidence‑first).
 
-| Symptom                     | Fix                                              |
-| --------------------------- | ------------------------------------------------ |
-| `tar_read()` error          | In Console: `targets::tar_make()`                |
-| YAMLException line 5        | Ensure the header starts with three dashes `---` |
-| “package XYZ not available” | `renv::restore()` then restart R                 |
+---
 
-### Independent events: where to change the gap
+## What you’re looking at
 
-- The default event gap is 5 minutes. To change it and rebuild affected outputs:
+- **Independent events**: we merge bursty triggers into events using a gap (default **5 min**).
+- **Effort**: rates are **events per 100 trap‑nights (RAI)** so sites are comparable.
+- **Diversity**: Hill numbers with **bootstrap CIs**; rarefaction with **coverage**.
+- **Turnover**: paired distances (Bray vs Jaccard), NMDS, PERMANOVA + **dispersion**.
+- **Habitat use**: GLMs with effort offset; coefficients reported as **IRRs**.
+- **Detectability**: daily detection histories, ψ̂(t) curves, simple occupancy.
+- **Inter‑specific**: co‑occurrence residuals; activity overlap Δ̂ with CIs.
+
+---
+
+## Changing the “independent event” gap
+
+The default gap is **5 minutes**. To change it:
 
 ```r
-# In _targets.R, edit this line
+# In _targets.R, edit:
 events_default <- build_events(raw, gap_min = 5L)
 
-# Then rebuild the affected targets
+# Then rebuild the affected targets only:
 targets::tar_make(names = c("events_default","rai","alpha","comm","gap_sensitivity","fig_gap"))
 ```
 
-RAIs (rate of animal images) are per 100 trap‑nights and are available via:
+**Tip:** Use `fig_gap` to justify your choice—pick the **smallest stable** gap.
 
-```r
-targets::tar_read(rai)
-```
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `tar_read()` error | In Console: `targets::tar_make()` |
+| YAMLException at top | Ensure the file begins with `---` and a valid header |
+| “package XYZ not available” | `renv::restore()` then restart R |
+| Quarto render hangs | Close all devices (`graphics.off()`), restart R, render again |
+
+---
+
+## After class
+
+Want to explore further, or do something different for your assessment task?  
+Create `explore.R` and call `targets::tar_read()` to pull any object (tables, matrices,  
+ggplots) into your session. Everything is inspectable and reproducible.
