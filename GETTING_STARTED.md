@@ -1,4 +1,4 @@
-# Getting Started — KPZ314 Camera‑trap Practical (Revised)
+# Getting Started — KPZ314 Camera‑trap Practical
 
 **Goal:** get you from zero to a rendered workbook in **5 minutes**.
 
@@ -39,28 +39,11 @@ Answer the **TASK** prompts inline or on separate notes (short, evidence‑first
 
 ---
 
-## Changing the “independent event” gap
-
-The default gap is **5 minutes**. To change it:
-
-```r
-# In _targets.R, edit:
-events_default <- build_events(raw, gap_min = 5L)
-
-# Then rebuild the affected targets only:
-targets::tar_make(names = c("events_default","rai","alpha","comm","gap_sensitivity","fig_gap"))
-```
-
-**Tip:** Use `fig_gap` to justify your choice—pick the **smallest stable** gap.
-
----
-
 ## Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |
 | `tar_read()` error | In Console: `targets::tar_make()` |
-| YAMLException at top | Ensure the file begins with `---` and a valid header |
 | “package XYZ not available” | `renv::restore()` then restart R |
 | Quarto render hangs | Close all devices (`graphics.off()`), restart R, render again |
 
